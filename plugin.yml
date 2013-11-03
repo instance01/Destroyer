@@ -1,0 +1,11 @@
+name: Destroyer
+main: com.comze_instancelabs.destroyerminigame.Main
+version: 1.0
+author: instancelabs
+permissions:
+  destroyer.sign:
+    description: Gives access to create signs for joining games.
+commands:
+   destroyer:
+      description: Main command
+      usage: /destroyer [name]
