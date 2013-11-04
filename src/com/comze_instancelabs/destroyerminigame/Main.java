@@ -57,12 +57,93 @@ public class Main extends JavaPlugin implements Listener {
     				String action = args[0];
     				if(action.equalsIgnoreCase("createarena")){
     					// /dest createarena [name]
+    					if(args.length > 1){
+    						String arena = args[1];
+    						getConfig().set("arenas." + arena + ".name", arena);
+    						sender.sendMessage("§4Successfully started creation of an arena.");
+    					}else{
+    						sender.sendMessage("§3Usage: §4/dest createarena [name]");
+    					}
     				}else if(action.equalsIgnoreCase("setlobby")){
     					// /dest setlobby {count} [name], where {count} is 1 or 2
+    					Player p = (Player)sender;
+    					if(args.length > 2){
+    						String count = args[1];
+    						String arena = args[2];
+    						getConfig().set("arenas." + arena + ".lobby" + count + ".world", arena);
+    						getConfig().set("arenas." + arena + ".lobby" + count + ".location.x", p.getLocation().getBlockX());
+    						getConfig().set("arenas." + arena + ".lobby" + count + ".location.y", p.getLocation().getBlockY());
+    						getConfig().set("arenas." + arena + ".lobby" + count + ".location.z", p.getLocation().getBlockZ());
+    						sender.sendMessage("§4Lobby " + count + " registered.");
+    					}else{
+    						sender.sendMessage("§3Usage: §4/dest setlobby {count} [name]");
+    					}
     				}else if(action.equalsIgnoreCase("setspawn")){
     					// /dest setspawn {count} [name], where {count} is 1 or 2
+    					Player p = (Player)sender;
+    					if(args.length > 2){
+    						String count = args[1];
+    						String arena = args[2];
+    						getConfig().set("arenas." + arena + ".spawn" + count + ".world", arena);
+    						getConfig().set("arenas." + arena + ".spawn" + count + ".location.x", p.getLocation().getBlockX());
+    						getConfig().set("arenas." + arena + ".spawn" + count + ".location.y", p.getLocation().getBlockY());
+    						getConfig().set("arenas." + arena + ".spawn" + count + ".location.z", p.getLocation().getBlockZ());
+    						sender.sendMessage("§4Spawn " + count + " registered.");
+    					}else{
+    						sender.sendMessage("§3Usage: §4/dest setspawn {count} [name]");
+    					}
     				}else if(action.equalsIgnoreCase("setbeacon")){
     					// /dest setbeacon {count} [name], where {count} is 1 or 2
+    					Player p = (Player)sender;
+    					if(args.length > 2){
+    						String count = args[1];
+    						String arena = args[2];
+    						getConfig().set("arenas." + arena + ".beacon" + count + ".world", arena);
+    						getConfig().set("arenas." + arena + ".beacon" + count + ".location.x", p.getLocation().getBlockX());
+    						getConfig().set("arenas." + arena + ".beacon" + count + ".location.y", p.getLocation().getBlockY());
+    						getConfig().set("arenas." + arena + ".beacon" + count + ".location.z", p.getLocation().getBlockZ());
+    						sender.sendMessage("§4Beacon " + count + " registered. PLEASE DO NOT DESTROY THIS BEACON! Use /dest removebeacon {count} [name] !");
+    						p.getWorld().getBlockAt(p.getLocation()).setType(Material.BEACON);
+    					}else{
+    						sender.sendMessage("§3Usage: §4/dest setbeacon {count} [name]");
+    					}
+    				}else if(action.equalsIgnoreCase("removearena")){
+    					// /dest removearena [name]
+    					if(args.length > 1){
+    						String arena = args[1];
+    						getConfig().set("arenas." + arena, null);
+    						sender.sendMessage("§4Successfully removed arena '§3" + arena + "§4'.");
+    					}else{
+    						sender.sendMessage("§3Usage: §4/dest removearena [name]");
+    					}
+    				}else if(action.equalsIgnoreCase("removebeacon")){
+    					// /dest removebeacon {count} [name]
+    					Player p = (Player)sender;
+    					if(args.length > 2){
+    						String count = args[1];
+    						String arena = args[2];
+    						try{
+    					    	p.getWorld().getBlockAt(getComponentFromArena(arena, "beacon", count)).setType(Material.AIR);
+    						}catch(Exception e){
+    							sender.sendMessage("§2Could not find beacon for §3" + arena + "§2!");
+    							return true;
+    						}
+    						getConfig().set("arenas." + arena + ".beacon" + count, null);
+    						sender.sendMessage("§4Successfully removed arena '§3" + arena + "§4'.");
+    					}else{
+    						sender.sendMessage("§3Usage: §4/dest removearena [name]");
+    					}
+    				}else if(action.equalsIgnoreCase("leave")){
+    					Player p = (Player)sender;
+    					if(arenap.containsKey(p.getName())){
+    						leaveArena(p.getName(), arenap.get(p.getName()));
+    					}else{
+    						sender.sendMessage("§2You're not in an arena right now!");
+    					}
+    				}else if(action.equalsIgnoreCase("list")){
+    					// /dest list
+    				}else if(action.equalsIgnoreCase("help")){
+    					// /dest help
     				}
     				//TODO: create all commands
     			}else{
@@ -102,6 +183,16 @@ public class Main extends JavaPlugin implements Listener {
 	        	event.setLine(0, "§2[Destroyer]");
 	        	if(!event.getLine(1).equalsIgnoreCase("")){
 	        		String arena = event.getLine(1);
+	        		if(isValidArena(arena)){
+	        			getConfig().set("arenas." + arena + ".sign.world", p.getWorld().getName());
+	        			getConfig().set("arenas." + arena + ".sign.location.x", p.getLocation().getBlockX());
+						getConfig().set("arenas." + arena + ".sign.location.y", p.getLocation().getBlockY());
+						getConfig().set("arenas." + arena + ".sign.location.z", p.getLocation().getBlockZ());
+						p.sendMessage("§4Successfully created arena sign.");
+	        		}else{
+	        			p.sendMessage("§2The arena appears to be invalid (missing components or misstyped arena)!");
+	        			event.getBlock().breakNaturally();
+	        		}
 	        		event.setLine(1, "§5" +  arena);
 	        	}
         	}
@@ -113,12 +204,26 @@ public class Main extends JavaPlugin implements Listener {
         }
 	}
 	
+	public boolean isValidArena(String arena){
+		//TODO: finish
+		if(getConfig().isSet("arenas." + arena) && getConfig().isSet("arenas." + arena + ".lobby1") && getConfig().isSet("arenas." + arena + ".lobby2") && getConfig().isSet("arenas." + arena + ".spawn1") && getConfig().isSet("arenas." + arena + ".spawn2") && getConfig().isSet("arenas." + arena + ".beacon1") && getConfig().isSet("arenas." + arena + ".beacon2")){
+			return true;
+		}
+		return false;
+	}
 	
 	public boolean isOnline(String player){
 		return Bukkit.getPlayer(player).isOnline();
 	}
 	
-	
+	public Location getComponentFromArena(String arena, String component, String count){
+		if(isValidArena(arena)){
+			String base = "arenas." + arena + "." + component + count;
+			return new Location(Bukkit.getWorld(getConfig().getString(base + ".world")), getConfig().getInt(base + ".location.x"), getConfig().getInt(base + ".location.y"), getConfig().getInt(base + ".location.z"));
+		}
+		return null;
+	}
+
 	
 	public void joinArena(String player, String arena){
 		// prepare player
@@ -158,7 +263,7 @@ public class Main extends JavaPlugin implements Listener {
 		
 	}
 	
-	public void leaveArena(){
+	public void leaveArena(String player, String arena){
 		
 	}
 	
@@ -176,5 +281,13 @@ public class Main extends JavaPlugin implements Listener {
 	
 	public void teamLoose(){
 		
+	}
+	
+	public void die(){
+		// save in stats if you die
+	}
+	
+	public void kill(){
+		// save in stats if you kill someone
 	}
 }

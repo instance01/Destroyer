@@ -9,6 +9,7 @@ public class Utils {
 	}
 	
 	
+	@Deprecated
 	public boolean validArena(String arena){
 		//TODO: finish
 		if(m.getConfig().isSet("arenas." + arena) && m.getConfig().isSet("arenas." + arena + ".lobby1")){
