@@ -9,6 +9,9 @@ commands:
    destroyer:
       description: Main command
       usage: /destroyer [name]
+   destadmin:
+      description: Main command
+      usage: /destroyer [name]
    dest:
       description: Main command
       usage: /destroyer [name]
