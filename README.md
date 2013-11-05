@@ -25,17 +25,17 @@ The setup is pretty big though..
 
 
 
-* dest createarena [name]
-* dest setboundaries {count} [name]
-* dest setspawn {count} [name]	
-* dest setlobby {count} [name]
-* dest setbeacon {count} [name]
+* /dest createarena [name]
+* /dest setboundaries {count} [name]
+* /dest setspawn {count} [name]	
+* /dest setlobby {count} [name]
+* /dest setbeacon {count} [name]
  
 
-after you built the arena map:
+[IMPORTANT] after you built the arena map:
 
 
-* dest save [name]
+* /dest save [name]
 
 
 
