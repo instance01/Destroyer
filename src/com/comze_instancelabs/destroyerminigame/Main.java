@@ -1,10 +1,13 @@
 package com.comze_instancelabs.destroyerminigame;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -12,8 +15,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin implements Listener {
@@ -22,7 +29,7 @@ public class Main extends JavaPlugin implements Listener {
 	public static HashMap<String, String> arenap = new HashMap<String, String>(); // player -> arena
 	public static HashMap<String, Integer> arenapcount = new HashMap<String, Integer>(); // arena -> current players in arena
 	public static HashMap<String, String> arena_state = new HashMap<String, String>(); // arena -> [join], [ingame], [restarting]
-	public static HashMap<String, Integer> team = new HashMap<String, Integer>(); // player -> team integer
+	public static HashMap<String, Integer> pteam = new HashMap<String, Integer>(); // player -> team integer
 	public static HashMap<String, Boolean> current_team_selection = new HashMap<String, Boolean>();
 
 	Utils u = null;
@@ -71,7 +78,7 @@ public class Main extends JavaPlugin implements Listener {
     					if(args.length > 2){
     						String count = args[1];
     						String arena = args[2];
-    						getConfig().set("arenas." + arena + ".lobby" + count + ".world", arena);
+    						getConfig().set("arenas." + arena + ".lobby" + count + ".world", p.getWorld().getName());
     						getConfig().set("arenas." + arena + ".lobby" + count + ".location.x", p.getLocation().getBlockX());
     						getConfig().set("arenas." + arena + ".lobby" + count + ".location.y", p.getLocation().getBlockY());
     						getConfig().set("arenas." + arena + ".lobby" + count + ".location.z", p.getLocation().getBlockZ());
@@ -86,7 +93,7 @@ public class Main extends JavaPlugin implements Listener {
     					if(args.length > 2){
     						String count = args[1];
     						String arena = args[2];
-    						getConfig().set("arenas." + arena + ".spawn" + count + ".world", arena);
+    						getConfig().set("arenas." + arena + ".spawn" + count + ".world", p.getWorld().getName());
     						getConfig().set("arenas." + arena + ".spawn" + count + ".location.x", p.getLocation().getBlockX());
     						getConfig().set("arenas." + arena + ".spawn" + count + ".location.y", p.getLocation().getBlockY());
     						getConfig().set("arenas." + arena + ".spawn" + count + ".location.z", p.getLocation().getBlockZ());
@@ -101,13 +108,26 @@ public class Main extends JavaPlugin implements Listener {
     					if(args.length > 2){
     						String count = args[1];
     						String arena = args[2];
-    						getConfig().set("arenas." + arena + ".beacon" + count + ".world", arena);
+    						getConfig().set("arenas." + arena + ".beacon" + count + ".world", p.getWorld().getName());
     						getConfig().set("arenas." + arena + ".beacon" + count + ".location.x", p.getLocation().getBlockX());
     						getConfig().set("arenas." + arena + ".beacon" + count + ".location.y", p.getLocation().getBlockY());
     						getConfig().set("arenas." + arena + ".beacon" + count + ".location.z", p.getLocation().getBlockZ());
     						sender.sendMessage("§2Beacon " + count + " registered. PLEASE DO NOT DESTROY THIS BEACON! Use /dest removebeacon {count} [name] !");
     						this.saveConfig();
-    						p.getWorld().getBlockAt(p.getLocation()).setType(Material.BEACON);
+    						Block b = p.getWorld().getBlockAt(p.getLocation());
+    						b.setType(Material.BEACON);
+    						Field field = null;
+							try {
+								field = net.minecraft.server.v1_6_R3.Block.class.getDeclaredField("strength");
+							} catch (NoSuchFieldException | SecurityException e) {
+								getLogger().severe("This version doesn't support your craftbukkit version!");
+							}
+    						field.setAccessible(true);
+    						try {
+								field.setFloat(b, 50.0F);
+							} catch (IllegalArgumentException | IllegalAccessException e) {
+								getLogger().severe("This version doesn't support your craftbukkit version!");
+							}
     					}else{
     						sender.sendMessage("§3Usage: §2/dest setbeacon {count} [name]");
     					}
@@ -135,7 +155,7 @@ public class Main extends JavaPlugin implements Listener {
     						}
     						getConfig().set("arenas." + arena + ".beacon" + count, null);
     						this.saveConfig();
-    						sender.sendMessage("§2Successfully removed arena '§3" + arena + "§2'.");
+    						sender.sendMessage("§2Successfully removed beacon " + count + " for arena '§3" + arena + "§2'.");
     					}else{
     						sender.sendMessage("§3Usage: §2/dest removearena [name]");
     					}
@@ -221,7 +241,6 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	public boolean isValidArena(String arena){
-		//TODO: finish
 		if(getConfig().isSet("arenas." + arena + ".name") && getConfig().isSet("arenas." + arena + ".lobby1") && getConfig().isSet("arenas." + arena + ".lobby2") && getConfig().isSet("arenas." + arena + ".spawn1") && getConfig().isSet("arenas." + arena + ".spawn2") && getConfig().isSet("arenas." + arena + ".beacon1") && getConfig().isSet("arenas." + arena + ".beacon2")){
 			return true;
 		}
@@ -241,7 +260,7 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	
-	public void joinArena(String player, String arena){
+	public void joinArena(final String player, String arena){
 		// prepare player
 		arenap.put(player, arena);
 		int count = 1;
@@ -257,14 +276,17 @@ public class Main extends JavaPlugin implements Listener {
 		
 		if(isOnline(player)){
 			final Location t = getComponentFromArena(arena, "lobby", "2");
-			getLogger().info(t.toString());
-			getLogger().info(getServer().getPlayer(player).getName());
-			getServer().getPlayer(player).teleport(t);
+			Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+				@Override
+				public void run() {
+					getServer().getPlayer(player).teleport(t);
+				}
+			}, 10);
 		}
 		
 		// start game if enough players
 		if(count > (maxplayers_perteam * 2 - 1)){
-			startArena();
+			startArena(arena);
 		}
 		
 	}
@@ -272,32 +294,78 @@ public class Main extends JavaPlugin implements Listener {
 	public void setTeam(String player, String arena, boolean team){
 		if(team){
 			// team 1
+			pteam.put(player, 1);
 		}else if(!team){
 			// team 2
+			pteam.put(player, 2);
 		}
 	}
 	
-	public void startArena(){
+	public void startArena(String arena){
+		for(String player : arenap.values()){
+			if(arenap.get(player).equalsIgnoreCase(arena)){
+				if(isOnline(player)){
+					getServer().getPlayer(player).sendMessage("§3The game has started!");
+					
+				}
+			}
+		}
+	}
+	
+	public void leaveArena(final String player, String arena){
+		if(isOnline(player)){
+			final Location t = getComponentFromArena(arena, "lobby", "1");
+			Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+				@Override
+				public void run() {
+					getServer().getPlayer(player).teleport(t);
+				}
+			}, 10);
+		}
+		
+		arenap.remove(player);
+		int count = 1;
+		if(arenapcount.containsKey(arena)){
+			count = arenapcount.get(arena) - 1;
+		}
+		arenapcount.put(arena, count);
+		/*if(count < 3){ // if count is less than 2 now
+			// last man standing
+		}*/
+	}
+	
+	public void resetArena(String arena){
+		for(final String player : arenap.values()){
+			if(arenap.get(player).equalsIgnoreCase(arena)){
+				if(isOnline(player)){
+					final Location t = getComponentFromArena(arena, "lobby", "1");
+					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							getServer().getPlayer(player).teleport(t);
+						}
+					}, 10);
+					pteam.remove(player);
+					getServer().getPlayer(player).sendMessage("§4The game has ended!");
+				}
+			}
+		}
+		
+		while (arenap.values().remove(arena));
+		arenapcount.remove(arena);
+		
+		//TODO: reset map
+	}
+	
+	public void ArenaDraw(String arena){ // if time runs out -> draw
+		resetArena(arena);
+	}
+	
+	public void teamWin(int team){
 		
 	}
 	
-	public void leaveArena(String player, String arena){
-		
-	}
-	
-	public void resetArena(){
-		
-	}
-	
-	public void ArenaDraw(){
-		
-	}
-	
-	public void teamWin(){
-		
-	}
-	
-	public void teamLoose(){
+	public void teamLose(int team){
 		
 	}
 	
@@ -308,4 +376,48 @@ public class Main extends JavaPlugin implements Listener {
 	public void kill(){
 		// save in stats if you kill someone
 	}
+	
+	
+	@EventHandler
+	public void onBlockBreak(BlockBreakEvent event){
+		if(arenap.containsKey(event.getPlayer().getName())){
+			if(event.getBlock().getType().equals(Material.BEACON)){
+				Player p = event.getPlayer();
+				int teamint = pteam.get(p.getName());
+				teamWin(teamint);
+			}
+		}
+	}
+	
+	@EventHandler
+	public void onPlayerLeave(PlayerQuitEvent event){
+		if(arenap.containsKey(event.getPlayer().getName())){
+			leaveArena(event.getPlayer().getName(), arenap.get(event.getPlayer().getName()));
+		}
+	}
+	
+	@EventHandler
+	public void onPlayerJoin(PlayerJoinEvent event){
+		// TODO: teleport player out of map, if left while a game was running
+	}
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event){
+    	if(event.getEntity().getKiller() != null){
+            if(event.getEntity().getKiller() instanceof Player && event.getEntity() instanceof Player && arenap.containsKey(event.getEntity()) && arenap.containsKey(event.getEntity().getKiller())){
+                event.getEntity().setHealth(20);
+            	String killerName = event.getEntity().getKiller().getName();
+                String entityKilled = event.getEntity().getName();
+                //getLogger().info(killerName + " killed " + entityKilled);
+                Player p1 = event.getEntity().getKiller();
+                Player p2 = event.getEntity();
+
+                p2.playSound(p2.getLocation(), Sound.CAT_MEOW, 1F, 1);
+
+            }
+        }	
+    }
+	
+
 }
+
