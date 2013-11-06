@@ -25,6 +25,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -681,6 +682,20 @@ public class Main extends JavaPlugin implements Listener {
 					event.setCancelled(true);
 				}
 			}
+		}
+	}
+	
+	@EventHandler
+	public void onBlockPlace(BlockPlaceEvent event){
+		if(arenap.containsKey(event.getPlayer().getName())){
+			Player p = event.getPlayer();
+			
+			// players can only build in the arena:
+	    	Cuboid c = new Cuboid(this.getComponentFromArena(arenap.get(p.getName()), "boundary", "1"), this.getComponentFromArena(arenap.get(p.getName()), "boundary", "2"));
+	    	if(!c.containsLoc(event.getBlock().getLocation())){
+	    		event.setCancelled(true);
+	    	}
+	    	
 		}
 	}
 	
