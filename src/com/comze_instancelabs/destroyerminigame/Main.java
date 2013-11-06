@@ -73,6 +73,10 @@ public class Main extends JavaPlugin implements Listener {
 		
 		getConfig().addDefault("config.maxplayers_per_team", 10);
 		getConfig().addDefault("config.auto_updating", true);
+		
+		getConfig().addDefault("classes.default.name", "Default");
+		getConfig().addDefault("classes.default.items", "");
+		
 		getConfig().options().copyDefaults(true);
 		this.saveDefaultConfig();
 		this.saveConfig();
@@ -240,7 +244,14 @@ public class Main extends JavaPlugin implements Listener {
     				}else if(action.equalsIgnoreCase("list")){
     					// /dest list
     					if(sender.hasPermission("destroyer.listarenas")){
-    						//TODO: list arenas
+    						if(getConfig().isSet("arenas")){
+    							sender.sendMessage("§2Arenas: ");
+	    						for(String arena : getConfig().getConfigurationSection("arenas.").getKeys(false)){
+	    							sender.sendMessage("§3" + arena);
+	    						}	
+    						}else{
+    							sender.sendMessage("§4Currently there are no registered arenas!");
+    						}
     					}
     				}else if(action.equalsIgnoreCase("stats")){
     					// /dest stats
@@ -495,8 +506,6 @@ public class Main extends JavaPlugin implements Listener {
 		while (arenap.values().remove(arena));
 		arenapcount.remove(arena);
 		
-		//TODO: reset map mechanism
-		
 		this.loadArenaFromFile(arena);
 	}
 	
@@ -560,6 +569,7 @@ public class Main extends JavaPlugin implements Listener {
 				if(!compareTwoLocations(event.getBlock().getLocation(), this.getComponentFromArena(arenap.get(p.getName()), "beacon", Integer.toString(pteam.get(p.getName()))))){
 					int teamint = pteam.get(p.getName());
 					teamWin(arenap.get(p.getName()), teamint);
+					event.setCancelled(true);
 				}else{
 					event.setCancelled(true);
 				}
