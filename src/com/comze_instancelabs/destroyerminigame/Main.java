@@ -16,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -323,7 +324,9 @@ public class Main extends JavaPlugin implements Listener {
 
                 if (s.getLine(0).equalsIgnoreCase("§2[destroyer]")){
                 	if(isValidArena(s.getLine(1).substring(2))){
-                		joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));	
+                		if(s.getLine(2).equalsIgnoreCase("§2[join]")){
+                			joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));
+                		}
                 	}else{
                 		event.getPlayer().sendMessage("§4This arena is set up wrong.");
                 	}
@@ -346,9 +349,9 @@ public class Main extends JavaPlugin implements Listener {
 	        		String arena = event.getLine(1);
 	        		if(isValidArena(arena)){
 	        			getConfig().set("arenas." + arena + ".sign.world", p.getWorld().getName());
-	        			getConfig().set("arenas." + arena + ".sign.location.x", p.getLocation().getBlockX());
-						getConfig().set("arenas." + arena + ".sign.location.y", p.getLocation().getBlockY());
-						getConfig().set("arenas." + arena + ".sign.location.z", p.getLocation().getBlockZ());
+	        			getConfig().set("arenas." + arena + ".sign.location.x", event.getBlock().getLocation().getBlockX());
+						getConfig().set("arenas." + arena + ".sign.location.y", event.getBlock().getLocation().getBlockY());
+						getConfig().set("arenas." + arena + ".sign.location.z", event.getBlock().getLocation().getBlockZ());
 						this.saveConfig();
 						p.sendMessage("§2Successfully created arena sign.");
 	        		}else{
@@ -356,6 +359,8 @@ public class Main extends JavaPlugin implements Listener {
 	        			event.getBlock().breakNaturally();
 	        		}
 	        		event.setLine(1, "§5" +  arena);
+	        		event.setLine(2, "§2[join]");
+	        		event.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 	        	}
         	}
         }else if(event.getLine(0).toLowerCase().contains("[d-class]")){
@@ -383,6 +388,26 @@ public class Main extends JavaPlugin implements Listener {
 			return new Location(Bukkit.getWorld(getConfig().getString(base + ".world")), getConfig().getInt(base + ".location.x"), getConfig().getInt(base + ".location.y"), getConfig().getInt(base + ".location.z"));
 		}
 		return null;
+	}
+	
+	public Location getComponentFromArena(String arena, String component){
+		if(isValidArena(arena)){
+			String base = "arenas." + arena + "." + component;
+			return new Location(Bukkit.getWorld(getConfig().getString(base + ".world")), getConfig().getInt(base + ".location.x"), getConfig().getInt(base + ".location.y"), getConfig().getInt(base + ".location.z"));
+		}
+		return null;
+	}
+	
+	public Sign getSignFromArena(String arena){
+		Location b_ = this.getComponentFromArena(arena, "sign");
+    	BlockState bs = b_.getBlock().getState();
+    	Sign s_ = null;
+    	if(bs instanceof Sign){
+    		s_ = (Sign)bs;
+    	}else{
+    		getLogger().info("Could not find sign: " + bs.getBlock().toString());
+    	}
+		return s_;
 	}
 	
 	public void saveStatsComponent(String player, String component, String value){
@@ -423,6 +448,10 @@ public class Main extends JavaPlugin implements Listener {
 			}, 10);
 		}
 		
+		Sign s = this.getSignFromArena(arena);
+		s.setLine(3, Integer.toString(arenapcount.get(arena)) + "/" + Integer.toString(this.maxplayers_perteam * 2));
+		s.update();
+		
 		// start game if enough players
 		if(count > (maxplayers_perteam * 2 - 1)){
 			startArena(arena);
@@ -441,6 +470,11 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	public void startArena(String arena){
+		Sign s = this.getSignFromArena(arena);
+		s.setLine(2, "§4[ingame]");
+		s.setLine(3, Integer.toString(arenapcount.get(arena)) + "/" + Integer.toString(this.maxplayers_perteam * 2));
+		s.update();
+		
 		for(final String player : arenap.keySet()){
 			if(arenap.get(player).equalsIgnoreCase(arena)){
 				if(isOnline(player)){
@@ -480,6 +514,11 @@ public class Main extends JavaPlugin implements Listener {
 		/*if(count < 3){ // if count is less than 2 now
 			// last man standing
 		}*/
+		
+		
+		Sign s = this.getSignFromArena(arena);
+		s.setLine(3, Integer.toString(arenapcount.get(arena)) + "/" + Integer.toString(this.maxplayers_perteam * 2));
+		s.update();
 	}
 	
 	public void resetArena(String arena){
@@ -509,6 +548,11 @@ public class Main extends JavaPlugin implements Listener {
 		arenapcount.remove(arena);
 		
 		this.loadArenaFromFile(arena);
+		
+		Sign s = this.getSignFromArena(arena);
+		s.setLine(2, "§2[join]");
+		s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
+		s.update();
 	}
 	
 	public void ArenaDraw(String arena){ // if time runs out -> draw
