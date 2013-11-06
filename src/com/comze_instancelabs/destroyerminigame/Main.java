@@ -73,6 +73,7 @@ public class Main extends JavaPlugin implements Listener {
 		getServer().getPluginManager().registerEvents(this, this);
 		
 		getConfig().addDefault("config.maxplayers_per_team", 10);
+		getConfig().addDefault("config.minutes_per_game", 15);
 		getConfig().addDefault("config.auto_updating", true);
 		
 		getConfig().addDefault("classes.default.name", "default");
@@ -269,8 +270,8 @@ public class Main extends JavaPlugin implements Listener {
     					String name = p.getName();
     					
     					p.sendMessage("§3Destroyer statistics: ");
-    					p.sendMessage("§3Team Wins: §2" + this.getStatsComponent(name, "teamwins"));
-    					p.sendMessage("§3Team Loses: §4" + this.getStatsComponent(name, "teamloses"));
+    					p.sendMessage("§3Team Wins: §2" + this.getStatsComponent(name, "teamwin"));
+    					p.sendMessage("§3Team Loses: §4" + this.getStatsComponent(name, "teamlose"));
     					p.sendMessage("§3Kills: §2" + this.getStatsComponent(name, "kills"));
     					p.sendMessage("§3Deaths: §4" + this.getStatsComponent(name, "deaths"));
     				}else if(action.equalsIgnoreCase("help")){
@@ -295,19 +296,19 @@ public class Main extends JavaPlugin implements Listener {
 						if(args.length > 1){
 							resetArena(args[1]);
 						}else{
-							sender.sendMessage("§3Usage: §4/destadmin reset [name]");
+							sender.sendMessage("§3Usage: §2/destadmin reset [name]");
 						}
 					}else if(action.equalsIgnoreCase("start")){
 						if(args.length > 1){
 							startArena(args[1]);
 						}else{
-							sender.sendMessage("§3Usage: §4/destadmin start [name]");
+							sender.sendMessage("§3Usage: §2/destadmin start [name]");
 						}
 					}else if(action.equalsIgnoreCase("end")){
 						if(args.length > 1){
 							resetArena(args[1]);
 						}else{
-							sender.sendMessage("§3Usage: §4/destadmin end [name]");
+							sender.sendMessage("§3Usage: §2/destadmin end [name]");
 						}
 					}else if(action.equalsIgnoreCase("savearena")){
 						if(args.length > 1){
@@ -315,7 +316,7 @@ public class Main extends JavaPlugin implements Listener {
 							f.delete();
 							saveArenaToFile(args[1]);
 						}else{
-							sender.sendMessage("§3Usage: §4/destadmin savearena [name]");
+							sender.sendMessage("§3Usage: §2/destadmin savearena [name]");
 						}
 					}
 	    		}
@@ -484,7 +485,7 @@ public class Main extends JavaPlugin implements Listener {
 		}
 	}
 	
-	public void startArena(String arena){
+	public void startArena(final String arena){
 		Sign s = this.getSignFromArena(arena);
 		s.setLine(2, "§4[ingame]");
 		s.setLine(3, Integer.toString(arenapcount.get(arena)) + "/" + Integer.toString(this.maxplayers_perteam * 2));
@@ -507,6 +508,13 @@ public class Main extends JavaPlugin implements Listener {
 				}
 			}
 		}
+		
+		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+			@Override
+			public void run() {
+				ArenaDraw(arena);
+			}
+		}, getConfig().getInt("config.minutes_per_game") * 1200);
 	}
 	
 	public void leaveArena(final String player, String arena){
@@ -571,6 +579,14 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	public void ArenaDraw(String arena){ // if time runs out -> draw
+		for(final String player : arenap.keySet()){
+			if(arenap.get(player).equalsIgnoreCase(arena)){
+				if(isOnline(player)){
+					getServer().getPlayer(player).sendMessage("§4It's a draw, noone wins!");
+				}
+			}
+		}
+		
 		resetArena(arena);
 	}
 	
@@ -581,7 +597,7 @@ public class Main extends JavaPlugin implements Listener {
 					int nbef = Integer.parseInt(this.getStatsComponent(player, "teamwin")) + 1;
 					this.saveStatsComponent(player, "teamwin", Integer.toString(nbef));
 					if(getServer().getPlayer(player).isOnline()){
-						getServer().getPlayer(player).sendMessage("§4Congratulations, you won this game!");
+						getServer().getPlayer(player).sendMessage("§2Congratulations, you won this game!");
 					}
 				}
 			}
@@ -596,7 +612,7 @@ public class Main extends JavaPlugin implements Listener {
 					int nbef = Integer.parseInt(this.getStatsComponent(player, "teamlose")) + 1;
 					this.saveStatsComponent(player, "teamlose", Integer.toString(nbef));
 					if(getServer().getPlayer(player).isOnline()){
-						getServer().getPlayer(player).sendMessage("§4Congratulations, you won this game!");
+						getServer().getPlayer(player).sendMessage("§2Congratulations, you won this game!");
 					}
 				}
 			}
