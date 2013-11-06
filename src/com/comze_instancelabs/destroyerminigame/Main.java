@@ -5,14 +5,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -23,8 +19,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -38,6 +32,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
@@ -52,6 +47,7 @@ public class Main extends JavaPlugin implements Listener {
 	public static HashMap<String, String> arena_state = new HashMap<String, String>(); // arena -> [join], [ingame], [restarting]
 	public static HashMap<String, Integer> pteam = new HashMap<String, Integer>(); // player -> team integer
 	public static HashMap<String, Boolean> current_team_selection = new HashMap<String, Boolean>();
+	public static HashMap<String, AClass> pclass = new HashMap<String, AClass>(); // player -> class
 
 	Utils u = null;
 	
@@ -498,6 +494,12 @@ public class Main extends JavaPlugin implements Listener {
 						}
 					}, 10);
 					pteam.remove(player);
+					
+					// reset class:
+					pclass.remove(player);
+					getServer().getPlayer(player).getInventory().clear();
+					getServer().getPlayer(player).updateInventory();
+					
 					getServer().getPlayer(player).sendMessage("§4The game has ended!");
 				}
 			}
@@ -514,7 +516,6 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	public void teamWin(String arena, int team){
-		//TODO: save win stats, broadcast team that won
 		for(String player : arenap.keySet()){
 			if(arenap.get(player).equalsIgnoreCase(arena)){
 				if(pteam.get(player) == team){
@@ -530,7 +531,6 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	public void teamLose(String arena, int team){
-		//TODO: save lose stats
 		for(String player : arenap.keySet()){
 			if(arenap.get(player).equalsIgnoreCase(arena)){
 				if(pteam.get(player) == team){
@@ -558,14 +558,32 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	
+	public void loadClasses(){
+		if(getConfig().isSet("classes")){
+			for(String aclass : getConfig().getConfigurationSection("classes.").getKeys(false)){
+				AClass n = new AClass(this, aclass, parseItems(getConfig().getString("classes." + aclass + ".items")));
+			}	
+		}
+	}
+	
+	public ArrayList<ItemStack> parseItems(String rawitems){
+		//TODO: add parsing mechanism
+		return null;
+	}
+	
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent event){
 		if(arenap.containsKey(event.getPlayer().getName())){
+			Player p = event.getPlayer();
+			
+			// players can only build in the arena:
+	    	Cuboid c = new Cuboid(this.getComponentFromArena(arenap.get(p.getName()), "boundary", "1"), this.getComponentFromArena(arenap.get(p.getName()), "boundary", "2"));
+	    	if(!c.containsLoc(event.getBlock().getLocation())){
+	    		event.setCancelled(true);
+	    	}
+	    	
 			if(event.getBlock().getType().equals(Material.BEACON)){
-				// TODO: arena boundaries
-				Player p = event.getPlayer();
-				// if it's not the own teams beacon
-				
+				// if it's not the own team's beacon
 				if(!compareTwoLocations(event.getBlock().getLocation(), this.getComponentFromArena(arenap.get(p.getName()), "beacon", Integer.toString(pteam.get(p.getName()))))){
 					int teamint = pteam.get(p.getName());
 					teamWin(arenap.get(p.getName()), teamint);
@@ -587,7 +605,12 @@ public class Main extends JavaPlugin implements Listener {
 	@EventHandler
 	public void onPlayerMove(PlayerMoveEvent event){
 		if(arenap.containsKey(event.getPlayer().getName())){
-			// TODO: arena boundaries
+			Player p = event.getPlayer();
+			Cuboid c = new Cuboid(this.getComponentFromArena(arenap.get(p.getName()), "boundary", "1"), this.getComponentFromArena(arenap.get(p.getName()), "boundary", "2"));
+	    	if(!c.containsLoc(event.getTo())){
+	    		// player is out of the arena
+	    		// TODO: arena boundaries
+	    	}
 		}
 	}
 	
@@ -608,9 +631,6 @@ public class Main extends JavaPlugin implements Listener {
     	if(event.getEntity().getKiller() != null){
             if(event.getEntity().getKiller() instanceof Player && event.getEntity() instanceof Player && arenap.containsKey(event.getEntity()) && arenap.containsKey(event.getEntity().getKiller())){
                 event.getEntity().setHealth(20);
-            	String killerName = event.getEntity().getKiller().getName();
-                String entityKilled = event.getEntity().getName();
-                //getLogger().info(killerName + " killed " + entityKilled);
                 Player p1 = event.getEntity().getKiller();
                 final Player p2 = event.getEntity();
                 String arena = arenap.get(p1.getName());
@@ -697,15 +717,6 @@ public class Main extends JavaPlugin implements Listener {
     }
     
     public void loadArenaFromFile(String arena){
-    	/*Cuboid c = new Cuboid(this.getComponentFromArena(arena, "boundary", "1"), this.getComponentFromArena(arena, "boundary", "2"));
-    	Location start = c.getLowLoc();
-    	Location end = c.getHighLoc();
-
-		int width = end.getBlockX() - start.getBlockX();
-		int length = end.getBlockZ() - start.getBlockZ();
-		int height = end.getBlockY() - start.getBlockY();
-		*/
-		
 		FileInputStream fis = null;
 		BukkitObjectInputStream ois = null;
 		try {
@@ -724,23 +735,16 @@ public class Main extends JavaPlugin implements Listener {
 				try{
 					b = ois.readObject();
 				}catch(EOFException e){
-					getLogger().info("finished");
+					//getLogger().info("finished");
 				}
 				
 				if(b != null){
-					//TODO this doesnt work, continuing work tomorrow
-					// when i initialize arenablock, the type turns to the new type in the world
-					// means the new arena blocks state overwrites the saved one.
-					
-					//EDIT: WOW. I just fucking made that function getting to work after like 5 hours of work.
 					ArenaBlock ablock = (ArenaBlock) b;
-					//getLogger().info(ablock.getBlock().getLocation().toString());
 					World w = ablock.getBlock().getWorld();
 					String n1 = w.getBlockAt(ablock.getBlock().getLocation()).getType().toString();
 					String n2 = ablock.getMaterial().toString();
 					
 					if(!n1.equalsIgnoreCase(n2)){
-						//getLogger().info("something wrong here: " + ablock.getBlock().getLocation().toString());
 						ablock.getBlock().getWorld().getBlockAt(ablock.getBlock().getLocation()).setType(ablock.getMaterial());
 					}
 				}else{
@@ -759,23 +763,11 @@ public class Main extends JavaPlugin implements Listener {
 			ois.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-		
-		
-		/*for (int i = 0; i < width; i++) {
-			for (int j = 0; j < height; j++) {
-				for(int k = 0; k < length; k++){
-					Block change = c.getWorld().getBlockAt(start.getBlockX() + width, start.getBlockY() + height, start.getBlockZ() + length);
-				}
-			}
-		}*/
-		
+		}		
 		
     }
     
     
-    
-
 
 }
 
