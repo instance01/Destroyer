@@ -43,6 +43,7 @@ import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 
 
+
 public class Main extends JavaPlugin implements Listener {
 
 	
@@ -63,6 +64,7 @@ public class Main extends JavaPlugin implements Listener {
 	 * dest setspawn {count} [name]
 	 * dest setlobby {count} [name]
 	 * dest setbeacon {count} [name]
+	 * dest save [name]
 	 * 
 	 */
 	
@@ -70,6 +72,7 @@ public class Main extends JavaPlugin implements Listener {
 		getServer().getPluginManager().registerEvents(this, this);
 		
 		getConfig().addDefault("config.maxplayers_per_team", 10);
+		getConfig().addDefault("config.auto_updating", true);
 		getConfig().options().copyDefaults(true);
 		this.saveDefaultConfig();
 		this.saveConfig();
@@ -77,6 +80,11 @@ public class Main extends JavaPlugin implements Listener {
 		maxplayers_perteam = getConfig().getInt("config.maxplayers_per_team");
 		
 		u = new Utils(this);
+		
+		
+		if (getConfig().getBoolean("config.auto_updating")) {
+			Updater updater = new Updater(this, 68563, this.getFile(), Updater.UpdateType.DEFAULT, false);
+		}
 	}
 	
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
