@@ -502,7 +502,7 @@ public class Main extends JavaPlugin implements Listener {
 						}
 					}, 10);
 					
-					this.getClass(player);
+					getClass(player);
 				}
 			}
 		}
@@ -619,6 +619,7 @@ public class Main extends JavaPlugin implements Listener {
 	public void getClass(String player){
 		AClass c = pclass.get(player);
 		if(isOnline(player)){
+			getServer().getPlayer(player).getInventory().clear();
 			getServer().getPlayer(player).updateInventory();
 			for(ItemStack i : c.items){
 				getServer().getPlayer(player).getInventory().addItem(i);
@@ -716,26 +717,47 @@ public class Main extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event){
-    	if(event.getEntity().getKiller() != null){
-            if(event.getEntity().getKiller() instanceof Player && event.getEntity() instanceof Player && arenap.containsKey(event.getEntity()) && arenap.containsKey(event.getEntity().getKiller())){
-                event.getEntity().setHealth(20);
-                Player p1 = event.getEntity().getKiller();
-                final Player p2 = event.getEntity();
-                String arena = arenap.get(p1.getName());
-                p2.playSound(p2.getLocation(), Sound.CAT_MEOW, 1F, 1);
-
-                die(p2.getName());
-                kill(p1.getName());
-                
-                final Location t = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(p2.getName())));
-				Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-					@Override
-					public void run() {
-						p2.teleport(t);
-					}
-				}, 5);
-            }
-        }	
+    	if(event.getEntity() instanceof Player){
+    		final Player p2 = event.getEntity();
+    		if(arenap.containsKey(p2.getName())){
+	    		if(event.getEntity().getKiller() != null){
+	    			if(event.getEntity().getKiller() instanceof Player){
+	    				Player p1 = event.getEntity().getKiller();
+	    				if(arenap.containsKey(p1.getName())){
+		    				event.getEntity().setHealth(20);
+							String arena = arenap.get(p1.getName());
+							p2.playSound(p2.getLocation(), Sound.CAT_MEOW, 1F, 1);
+			
+							die(p2.getName());
+							kill(p1.getName());
+			
+							final Location t = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(p2.getName())));
+							Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+								@Override
+								public void run() {
+									p2.teleport(t);
+								}
+							}, 5);		
+	    				}
+	    			}
+	    		}else{
+	    			event.getEntity().setHealth(20);
+					String arena = arenap.get(p2.getName());
+					p2.playSound(p2.getLocation(), Sound.CAT_MEOW, 1F, 1);
+	
+					die(p2.getName());
+	
+					final Location t = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(p2.getName())));
+					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							p2.teleport(t);
+						}
+					}, 5);
+	    		}	
+    		}
+    		
+    	}
     }
 	
     
