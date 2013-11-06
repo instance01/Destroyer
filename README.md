@@ -40,4 +40,4 @@ The setup is pretty big though..
 
 
 
-BukkitDev project page coming soon. Have fun!
+BukkitDev project page: [Destroyer](http:/dev.bukkit.org/bukkit-plugins/destroyer/)
