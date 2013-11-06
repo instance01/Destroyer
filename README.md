@@ -35,7 +35,7 @@ The setup is pretty big though..
 [IMPORTANT] after you built the arena map:
 
 
-* /dest save [name]
+* /destadmin savearena [name]
 
 
 
