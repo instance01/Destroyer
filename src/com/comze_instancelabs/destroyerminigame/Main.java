@@ -50,6 +50,9 @@ public class Main extends JavaPlugin implements Listener {
 	public static HashMap<String, Boolean> current_team_selection = new HashMap<String, Boolean>();
 	public static HashMap<String, AClass> pclass = new HashMap<String, AClass>(); // player -> class
 
+	public static HashMap<String, AClass> aclasses = new HashMap<String, AClass>(); // classname -> class
+
+	
 	Utils u = null;
 	
 	public int maxplayers_perteam = 0;
@@ -71,8 +74,10 @@ public class Main extends JavaPlugin implements Listener {
 		getConfig().addDefault("config.maxplayers_per_team", 10);
 		getConfig().addDefault("config.auto_updating", true);
 		
-		getConfig().addDefault("classes.default.name", "Default");
-		getConfig().addDefault("classes.default.items", "");
+		getConfig().addDefault("classes.default.name", "default");
+		getConfig().addDefault("classes.default.items", "267#1;3#64;3#64");
+		//getConfig().addDefault("classes.pro.name", "pro");
+		//getConfig().addDefault("classes.pro.items", "278#1;17#64;17#64;17#64");
 		
 		getConfig().options().copyDefaults(true);
 		this.saveDefaultConfig();
@@ -82,6 +87,7 @@ public class Main extends JavaPlugin implements Listener {
 		
 		u = new Utils(this);
 		
+		this.loadClasses();
 		
 		if (getConfig().getBoolean("config.auto_updating")) {
 			Updater updater = new Updater(this, 68563, this.getFile(), Updater.UpdateType.DEFAULT, false);
@@ -249,6 +255,12 @@ public class Main extends JavaPlugin implements Listener {
     						}else{
     							sender.sendMessage("§4Currently there are no registered arenas!");
     						}
+    					}
+    				}else if(action.equalsIgnoreCase("reload")){
+    					// /dest list
+    					if(sender.hasPermission("destroyer.reload")){
+    						this.reloadConfig();
+    						sender.sendMessage("§2Successfully reloaded config!");
     					}
     				}else if(action.equalsIgnoreCase("stats")){
     					// /dest stats
@@ -448,6 +460,8 @@ public class Main extends JavaPlugin implements Listener {
 			}, 10);
 		}
 		
+		this.setClass("default", player);
+		
 		Sign s = this.getSignFromArena(arena);
 		s.setLine(3, Integer.toString(arenapcount.get(arena)) + "/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
@@ -488,7 +502,7 @@ public class Main extends JavaPlugin implements Listener {
 						}
 					}, 10);
 					
-					//TODO: give the player his class
+					this.getClass(player);
 				}
 			}
 		}
@@ -602,17 +616,47 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	
+	public void getClass(String player){
+		AClass c = pclass.get(player);
+		if(isOnline(player)){
+			getServer().getPlayer(player).updateInventory();
+			for(ItemStack i : c.items){
+				getServer().getPlayer(player).getInventory().addItem(i);
+			}
+			getServer().getPlayer(player).updateInventory();
+		}
+	}
+	
+	public void setClass(String classname, String player){
+		pclass.put(player, aclasses.get(classname));
+	}
+	
 	public void loadClasses(){
 		if(getConfig().isSet("classes")){
 			for(String aclass : getConfig().getConfigurationSection("classes.").getKeys(false)){
 				AClass n = new AClass(this, aclass, parseItems(getConfig().getString("classes." + aclass + ".items")));
-			}	
+				aclasses.put(aclass, n);
+			}
 		}
 	}
 	
+	// example items: 267#1;3#64;3#64
+	@SuppressWarnings("unused")
 	public ArrayList<ItemStack> parseItems(String rawitems){
-		//TODO: add parsing mechanism
-		return null;
+		ArrayList<ItemStack> ret = new ArrayList<ItemStack>();
+		
+		String[] a = rawitems.split(";");
+		for(String b : a){
+			String[] c = b.split("#");
+			String itemid = c[0];
+			String itemamount = c[1];
+			ItemStack nitem = new ItemStack(Integer.parseInt(itemid), Integer.parseInt(itemamount));
+			ret.add(nitem);
+		}
+		if(ret == null){
+			getLogger().severe("Found invalid class in config!");
+		}
+		return ret;
 	}
 	
 	@EventHandler
