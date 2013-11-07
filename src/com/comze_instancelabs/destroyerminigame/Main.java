@@ -190,15 +190,19 @@ public class Main extends JavaPlugin implements Listener {
 	    						Field field = null;
 								try {
 									field = net.minecraft.server.v1_6_R3.Block.class.getDeclaredField("strength");
-								} catch (NoSuchFieldException | SecurityException e) {
+								} catch (NoSuchFieldException e1) {
+									getLogger().severe("This version doesn't support your craftbukkit version!");
+								} catch (SecurityException e){
 									getLogger().severe("This version doesn't support your craftbukkit version!");
 								}
 	    						field.setAccessible(true);
 	    						try {
 									field.setFloat(b, 50.0F);
-								} catch (IllegalArgumentException | IllegalAccessException e) {
+								} catch (IllegalArgumentException e1) {
 									getLogger().severe("This version doesn't support your craftbukkit version!");
-								}	
+								} catch (IllegalAccessException e){
+									getLogger().severe("This version doesn't support your craftbukkit version!");
+								}
     						}else{
     							sender.sendMessage("§4You don't have permission.");
     						}
@@ -276,12 +280,34 @@ public class Main extends JavaPlugin implements Listener {
     					p.sendMessage("§3Deaths: §4" + this.getStatsComponent(name, "deaths"));
     				}else if(action.equalsIgnoreCase("help")){
     					// /dest help
-    					//TODO: display help
-    					sender.sendMessage("§2Help:");
-    				}
+    					sender.sendMessage("§6----------------");
+    					sender.sendMessage("§2Do the following to set up an arena: ");
+    					sender.sendMessage("§3/dest createarena [name]");
+    					sender.sendMessage("§3/dest setboundaries 1 [name] §2and §3/dest setboundaries 2 [name]");
+    					sender.sendMessage("§3/dest setspawn 1 [name] §2and §3/dest setspawn 2 [name]");
+    					sender.sendMessage("§3/dest setlobby 1 [name] §2and §3/dest setlobby 2 [name]");
+    					sender.sendMessage("§3/dest setbeacon 1 [name] §2and §3/dest setbeacon 2 [name]");
+    					sender.sendMessage("§2Important: §3/dest savearena [name]");
+    					sender.sendMessage("§6----------------");
+    				}else if(action.equalsIgnoreCase("savearena")){
+						if(args.length > 1){
+							File f = new File(this.getDataFolder() + "/" + args[1]);
+							f.delete();
+							saveArenaToFile(args[1]);
+						}else{
+							sender.sendMessage("§3Usage: §2/dest savearena [name]");
+						}
+					}
     			}else{
-    				//TODO: display help
-    				sender.sendMessage("§2Help: ");
+    				sender.sendMessage("§6----------------");
+    				sender.sendMessage("§2Do the following to set up an arena: ");
+					sender.sendMessage("§3/dest createarena [name]");
+					sender.sendMessage("§3/dest setboundaries 1 [name] §2and §3/dest setboundaries 2 [name]");
+					sender.sendMessage("§3/dest setspawn 1 [name] §2and §3/dest setspawn 2 [name]");
+					sender.sendMessage("§3/dest setlobby 1 [name] §2and §3/dest setlobby 2 [name]");
+					sender.sendMessage("§3/dest setbeacon 1 [name] §2and §3/dest setbeacon 2 [name]");
+					sender.sendMessage("§2Important: §3/dest savearena [name]");
+					sender.sendMessage("§6----------------");
     			}
     			return true;
     		}else{
@@ -312,7 +338,7 @@ public class Main extends JavaPlugin implements Listener {
 						}
 					}else if(action.equalsIgnoreCase("savearena")){
 						if(args.length > 1){
-							File f = new File(args[1]);
+							File f = new File(this.getDataFolder() + "/" + args[1]);
 							f.delete();
 							saveArenaToFile(args[1]);
 						}else{
@@ -544,7 +570,7 @@ public class Main extends JavaPlugin implements Listener {
 		s.update();
 	}
 	
-	public void resetArena(String arena){
+	public void resetArena(final String arena){
 		for(final String player : arenap.keySet()){
 			if(arenap.get(player).equalsIgnoreCase(arena)){
 				if(isOnline(player)){
@@ -570,10 +596,15 @@ public class Main extends JavaPlugin implements Listener {
 		while (arenap.values().remove(arena));
 		arenapcount.remove(arena);
 		
-		this.loadArenaFromFile(arena);
+		Runnable r = new Runnable() {
+	        public void run() {
+	        	loadArenaFromFile(arena);
+	        }
+	    };
+	    new Thread(r).start();
 		
 		Sign s = this.getSignFromArena(arena);
-		s.setLine(2, "§2[join]");
+		s.setLine(2, "§6[restarting]");
 		s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
 	}
@@ -807,7 +838,7 @@ public class Main extends JavaPlugin implements Listener {
     
 
     public void saveArenaToFile(String arena){
-    	File f = new File(arena);
+    	File f = new File(this.getDataFolder() + "/" + arena);
     	Cuboid c = new Cuboid(this.getComponentFromArena(arena, "boundary", "1"), this.getComponentFromArena(arena, "boundary", "2"));
     	Location start = c.getLowLoc();
     	Location end = c.getHighLoc();
@@ -822,7 +853,7 @@ public class Main extends JavaPlugin implements Listener {
 		FileOutputStream fos;
 		ObjectOutputStream oos = null;
 		try{
-			fos = new FileOutputStream(arena);	
+			fos = new FileOutputStream(f);
 			oos = new BukkitObjectOutputStream(fos);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -858,16 +889,15 @@ public class Main extends JavaPlugin implements Listener {
     }
     
     public void loadArenaFromFile(String arena){
+    	File f = new File(this.getDataFolder() + "/" + arena);
 		FileInputStream fis = null;
 		BukkitObjectInputStream ois = null;
 		try {
-			fis = new FileInputStream(arena);
+			fis = new FileInputStream(f);
 			ois = new BukkitObjectInputStream(fis);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-        
 
 		try {
 			while(true)  
@@ -876,16 +906,19 @@ public class Main extends JavaPlugin implements Listener {
 				try{
 					b = ois.readObject();
 				}catch(EOFException e){
-					//getLogger().info("finished");
+					getLogger().info("Finished restoring map for " + arena + ".");
+					
+					Sign s = this.getSignFromArena(arena);
+					s.setLine(2, "§2[join]");
+					s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
+					s.update();
 				}
 				
 				if(b != null){
 					ArenaBlock ablock = (ArenaBlock) b;
 					World w = ablock.getBlock().getWorld();
-					String n1 = w.getBlockAt(ablock.getBlock().getLocation()).getType().toString();
-					String n2 = ablock.getMaterial().toString();
-					
-					if(!n1.equalsIgnoreCase(n2)){
+
+					if(!w.getBlockAt(ablock.getBlock().getLocation()).getType().toString().equalsIgnoreCase(ablock.getMaterial().toString())){
 						ablock.getBlock().getWorld().getBlockAt(ablock.getBlock().getLocation()).setType(ablock.getMaterial());
 					}
 				}else{
