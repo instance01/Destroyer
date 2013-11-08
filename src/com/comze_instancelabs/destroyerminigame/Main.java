@@ -35,7 +35,9 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 
@@ -243,6 +245,22 @@ public class Main extends JavaPlugin implements Listener {
     					}else{
     						sender.sendMessage("§3Usage: §2/dest removearena [name]");
     					}
+    				}else if(action.equalsIgnoreCase("changeclass")){
+    					// /dest changeclass [name]
+    					Player p = (Player)sender;
+    					if(args.length > 1){
+    						if(sender.hasPermission("destroyer.changeclass")){
+	    						if(arenap.containsKey(p.getName())){
+	    							if(aclasses.containsKey(args[1])){
+	    								if(p.hasPermission("tc.class." + args[1])){
+	    									this.setClass(args[1], p.getName());
+	    								}
+	    							}
+	    						}
+    						}
+    					}else{
+    						sender.sendMessage("§3Usage: §2/dest changeclass [name].");
+    					}
     				}else if(action.equalsIgnoreCase("leave")){
     					Player p = (Player)sender;
     					if(arenap.containsKey(p.getName())){
@@ -290,13 +308,22 @@ public class Main extends JavaPlugin implements Listener {
     					sender.sendMessage("§2Important: §3/dest savearena [name]");
     					sender.sendMessage("§6----------------");
     				}else if(action.equalsIgnoreCase("savearena")){
-						if(args.length > 1){
-							File f = new File(this.getDataFolder() + "/" + args[1]);
-							f.delete();
-							saveArenaToFile(args[1]);
-						}else{
-							sender.sendMessage("§3Usage: §2/dest savearena [name]");
-						}
+    					if(sender.hasPermission("destroyer.savearena")){
+	    					if(args.length > 1){
+	    						if(isValidArena(args[1])){
+		    						File f = new File(this.getDataFolder() + "/" + args[1]);
+									f.delete();
+									saveArenaToFile(args[1]);	
+	    						}else{
+	    							sender.sendMessage("§4The arena appears to be invalid (missing components)!");
+	    						}
+								
+							}else{
+								sender.sendMessage("§3Usage: §2/dest savearena [name]");
+							}	
+    					}else{
+    						sender.sendMessage("§4You don't have permission.");
+    					}
 					}
     			}else{
     				sender.sendMessage("§6----------------");
@@ -596,13 +623,17 @@ public class Main extends JavaPlugin implements Listener {
 		while (arenap.values().remove(arena));
 		arenapcount.remove(arena);
 		
+		final ArrayList<ArenaBlock> ablocklist = new ArrayList<ArenaBlock>();
+		
 		Runnable r = new Runnable() {
 	        public void run() {
-	        	loadArenaFromFile(arena);
+	        	//loadArenaFromFileASYNC(arena);
+	        	loadArenaFromFileSYNC(arena);
 	        }
 	    };
 	    new Thread(r).start();
 		
+	    
 		Sign s = this.getSignFromArena(arena);
 		s.setLine(2, "§6[restarting]");
 		s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
@@ -847,8 +878,8 @@ public class Main extends JavaPlugin implements Listener {
 		int length = end.getBlockZ() - start.getBlockZ();
 		int height = end.getBlockY() - start.getBlockY();
 		
-		getLogger().info(Integer.toString(width) + " " + Integer.toString(height) +  " " + Integer.toString(length)); 
-		
+		getLogger().info("BOUNDS: " + Integer.toString(width) + " " + Integer.toString(height) +  " " + Integer.toString(length)); 
+		getLogger().info("BLOCKS TO SAVE: " + Integer.toString(width * height * length));
 		
 		FileOutputStream fos;
 		ObjectOutputStream oos = null;
@@ -888,7 +919,7 @@ public class Main extends JavaPlugin implements Listener {
 		getLogger().info("saved");
     }
     
-    public void loadArenaFromFile(String arena){
+    public void loadArenaFromFileASYNC(String arena){
     	File f = new File(this.getDataFolder() + "/" + arena);
 		FileInputStream fis = null;
 		BukkitObjectInputStream ois = null;
@@ -938,6 +969,66 @@ public class Main extends JavaPlugin implements Listener {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}		
+		
+    }
+    
+    
+    public void loadArenaFromFileSYNC(String arena){
+    	int failcount = 0;
+    	
+    	File f = new File(this.getDataFolder() + "/" + arena);
+		FileInputStream fis = null;
+		BukkitObjectInputStream ois = null;
+		try {
+			fis = new FileInputStream(f);
+			ois = new BukkitObjectInputStream(fis);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		try {
+			while(true)  
+			{ 
+				Object b = null;
+				try{
+					b = ois.readObject();
+				}catch(EOFException e){
+					getLogger().info("Finished restoring map for " + arena + ".");
+					
+					Sign s = this.getSignFromArena(arena);
+					s.setLine(2, "§2[join]");
+					s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
+					s.update();
+				}
+				
+				if(b != null){
+					ArenaBlock ablock = (ArenaBlock) b;
+					try{
+						if(!ablock.getBlock().getWorld().getBlockAt(ablock.getBlock().getLocation()).getType().toString().equalsIgnoreCase(ablock.getMaterial().toString())){
+							ablock.getBlock().getWorld().getBlockAt(ablock.getBlock().getLocation()).setType(ablock.getMaterial());
+						}
+					}catch(IllegalStateException e){
+						failcount += 1;
+					}
+				}else{
+					break;
+				}
+			} 
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+            
+
+		try {
+			ois.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		getLogger().info("Failed to update " + Integer.toString(failcount) + " blocks due to spigots async exception.");
 		
     }
     
