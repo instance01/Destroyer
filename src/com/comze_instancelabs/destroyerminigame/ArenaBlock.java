@@ -11,8 +11,8 @@ public class ArenaBlock implements Serializable
 {
     private static final long serialVersionUID = -1894759842709524780L;
     
-    private int x, y, z;
-    private String world;
+    public int x, y, z;
+    public String world;
     public Material m;
  
     public ArenaBlock(Block b)

@@ -249,13 +249,21 @@ public class Main extends JavaPlugin implements Listener {
     					// /dest changeclass [name]
     					Player p = (Player)sender;
     					if(args.length > 1){
-    						if(sender.hasPermission("destroyer.changeclass")){
+    						if(p.hasPermission("destroyer.changeclass")){
 	    						if(arenap.containsKey(p.getName())){
 	    							if(aclasses.containsKey(args[1])){
 	    								if(p.hasPermission("tc.class." + args[1])){
 	    									this.setClass(args[1], p.getName());
 	    								}
+	    							}else{
+	    								String all = "";
+	    								for(String class_ : aclasses.keySet()){
+	    									all += class_ + ",";
+	    								}
+	    								sender.sendMessage("§4This is not a valid class. Possible ones: §3" + all.substring(0, all.length() - 1));
 	    							}
+	    						}else{
+	    							sender.sendMessage("§4You are not in an arena right now.");
 	    						}
     						}
     					}else{
@@ -975,6 +983,7 @@ public class Main extends JavaPlugin implements Listener {
     
     public void loadArenaFromFileSYNC(String arena){
     	int failcount = 0;
+    	final ArrayList<ArenaBlock> failedblocks = new ArrayList<ArenaBlock>();
     	
     	File f = new File(this.getDataFolder() + "/" + arena);
 		FileInputStream fis = null;
@@ -1009,6 +1018,7 @@ public class Main extends JavaPlugin implements Listener {
 						}
 					}catch(IllegalStateException e){
 						failcount += 1;
+						failedblocks.add(ablock);
 					}
 				}else{
 					break;
@@ -1027,12 +1037,23 @@ public class Main extends JavaPlugin implements Listener {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		getLogger().warning("Failed to update " + Integer.toString(failcount) + " blocks due to spigots async exception.");
+		getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+			public void run() {
+				// restore spigot blocks!
+				getLogger().info("Trying to restore blocks affected by spigot exception..");
+				for(ArenaBlock ablock : failedblocks){
+					getServer().getWorld(ablock.world).getBlockAt(new Location(getServer().getWorld(ablock.world), ablock.x, ablock.y, ablock.z)).setType(Material.WOOL);
+					getServer().getWorld(ablock.world).getBlockAt(new Location(getServer().getWorld(ablock.world), ablock.x, ablock.y, ablock.z)).getTypeId();
+					getServer().getWorld(ablock.world).getBlockAt(new Location(getServer().getWorld(ablock.world), ablock.x, ablock.y, ablock.z)).setType(ablock.getMaterial());
+				}
+				getLogger().info("Successfully finished!");
+			}
+		}, 40L);
 		
-		getLogger().info("Failed to update " + Integer.toString(failcount) + " blocks due to spigots async exception.");
-		
+		return;
     }
-    
-    
 
 }
 
