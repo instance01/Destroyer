@@ -419,7 +419,7 @@ public class Main extends JavaPlugin implements Listener {
 	        {
 	            final Sign s = (Sign) event.getClickedBlock().getState();
 
-                if (s.getLine(0).equalsIgnoreCase("§2[destroyer]")){
+                if (s.getLine(0).equalsIgnoreCase("§2[thecore]")){
                 	if(isValidArena(s.getLine(1).substring(2))){
                 		if(s.getLine(2).equalsIgnoreCase("§2[join]")){
                 			joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));
@@ -439,9 +439,9 @@ public class Main extends JavaPlugin implements Listener {
 	@EventHandler
     public void onSignChange(SignChangeEvent event) {
         Player p = event.getPlayer();
-        if(event.getLine(0).toLowerCase().contains("[destroyer]")){
+        if(event.getLine(0).toLowerCase().contains("[thecore]")){
         	if(event.getPlayer().hasPermission("thecore.sign")){
-	        	event.setLine(0, "§2[Destroyer]");
+	        	event.setLine(0, "§2[thecore]");
 	        	if(!event.getLine(1).equalsIgnoreCase("")){
 	        		String arena = event.getLine(1);
 	        		if(isValidArena(arena)){
@@ -463,7 +463,7 @@ public class Main extends JavaPlugin implements Listener {
         }else if(event.getLine(0).toLowerCase().contains("[d-class]")){
         	if(event.getPlayer().hasPermission("thecore.sign")){
 	        	event.setLine(0, "§2[D-Class]");
-	        	event.getPlayer().sendMessage("§2You have successfully created a class sign for Destroyer!");
+	        	event.getPlayer().sendMessage("§2You have successfully created a class sign for TheCore!");
         	}
         }
 	}
