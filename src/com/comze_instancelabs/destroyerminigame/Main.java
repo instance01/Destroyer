@@ -40,6 +40,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
+import org.kitteh.vanish.staticaccess.VanishNoPacket;
+import org.kitteh.vanish.staticaccess.VanishNotLoadedException;
 
 
 
@@ -53,12 +55,16 @@ public class Main extends JavaPlugin implements Listener {
 	public static HashMap<String, Boolean> current_team_selection = new HashMap<String, Boolean>();
 	public static HashMap<String, AClass> pclass = new HashMap<String, AClass>(); // player -> class
 
+	public static HashMap<String, Boolean> pspectate = new HashMap<String, Boolean>(); // player -> spectate boolean
+	
 	public static HashMap<String, AClass> aclasses = new HashMap<String, AClass>(); // classname -> class
 
 	
 	Utils u = null;
 	
 	public int maxplayers_perteam = 0;
+	
+	Plugin vanishnoplugin = null;
 	
 	/*
 	 * Setup:
@@ -76,12 +82,11 @@ public class Main extends JavaPlugin implements Listener {
 		
 		getConfig().addDefault("config.maxplayers_per_team", 10);
 		getConfig().addDefault("config.minutes_per_game", 15);
+		getConfig().addDefault("config.respawn_time_in_seconds", 5);
 		getConfig().addDefault("config.auto_updating", true);
 		
 		getConfig().addDefault("classes.default.name", "default");
 		getConfig().addDefault("classes.default.items", "267#1;3#64;3#64");
-		//getConfig().addDefault("classes.pro.name", "pro");
-		//getConfig().addDefault("classes.pro.items", "278#1;17#64;17#64;17#64");
 		
 		getConfig().options().copyDefaults(true);
 		this.saveDefaultConfig();
@@ -91,11 +96,19 @@ public class Main extends JavaPlugin implements Listener {
 		
 		u = new Utils(this);
 		
+		// extra test class
+		getConfig().set("classes.pro.name", "pro");
+		getConfig().set("classes.pro.items", "278#1;17#64;17#64;17#64");
+		this.saveConfig();
+		
 		this.loadClasses();
 		
-		if (getConfig().getBoolean("config.auto_updating")) {
+		/*if (getConfig().getBoolean("config.auto_updating")) {
 			Updater updater = new Updater(this, 68563, this.getFile(), Updater.UpdateType.DEFAULT, false);
-		}
+		}*/
+
+		
+		this.vanishnoplugin = getServer().getPluginManager().getPlugin("VanishNoPacket");
 	}
 	
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
@@ -268,6 +281,16 @@ public class Main extends JavaPlugin implements Listener {
     						}
     					}else{
     						sender.sendMessage("§3Usage: §2/dest changeclass [name].");
+    					}
+    				}else if(action.equalsIgnoreCase("spectate")){
+    					// /dest changeclass [name]
+    					Player p = (Player)sender;
+    					if(args.length > 1){
+    						if(p.hasPermission("destroyer.spectate")){
+	    						spectateArena(p.getName(), args[1]);
+    						}
+    					}else{
+    						sender.sendMessage("§3Usage: §2/dest spectate [name].");
     					}
     				}else if(action.equalsIgnoreCase("leave")){
     					Player p = (Player)sender;
@@ -499,6 +522,44 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	
+	
+	public void spectateArena(final String player, String arena){
+		if(isOnline(player)){
+			Player p = getServer().getPlayer(player);
+			
+			try {
+				if(pspectate.containsKey(p.getName())){
+					pspectate.remove(p.getName());
+					p.setFlying(false);
+					p.setAllowFlight(false);
+					final Location t = getComponentFromArena(arena, "lobby", "1");
+					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							getServer().getPlayer(player).teleport(t);
+						}
+					}, 10);
+				}else{
+					pspectate.put(p.getName(), true);
+					p.setFlying(true);
+					p.setAllowFlight(true);
+					final Location t = getComponentFromArena(arena, "spawn", "1");
+					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							getServer().getPlayer(player).teleport(t);
+						}
+					}, 10);
+				}
+				VanishNoPacket.toggleVanishSilent(p);
+			} catch (VanishNotLoadedException e) {
+				getLogger().warning("VanishNoPacket was not loaded! Spectating doesn't work.");
+			}
+		}
+		
+	}
+	
+	
 	public void joinArena(final String player, String arena){
 		// prepare player
 		arenap.put(player, arena);
@@ -700,6 +761,8 @@ public class Main extends JavaPlugin implements Listener {
 		// save in stats if you kill someone
 		int nbef = Integer.parseInt(this.getStatsComponent(player, "kills")) + 1;
 		this.saveStatsComponent(player, "kills", Integer.toString(nbef));
+		
+		getClass(player);
 	}
 	
 	
@@ -838,7 +901,7 @@ public class Main extends JavaPlugin implements Listener {
 								public void run() {
 									p2.teleport(t);
 								}
-							}, 5);		
+							}, 5);
 	    				}
 	    			}
 	    		}else{
