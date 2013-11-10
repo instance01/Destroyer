@@ -40,8 +40,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
-import org.kitteh.vanish.staticaccess.VanishNoPacket;
-import org.kitteh.vanish.staticaccess.VanishNotLoadedException;
 
 
 
@@ -54,17 +52,14 @@ public class Main extends JavaPlugin implements Listener {
 	public static HashMap<String, Integer> pteam = new HashMap<String, Integer>(); // player -> team integer
 	public static HashMap<String, Boolean> current_team_selection = new HashMap<String, Boolean>();
 	public static HashMap<String, AClass> pclass = new HashMap<String, AClass>(); // player -> class
-
 	public static HashMap<String, Boolean> pspectate = new HashMap<String, Boolean>(); // player -> spectate boolean
-	
 	public static HashMap<String, AClass> aclasses = new HashMap<String, AClass>(); // classname -> class
-
+	public static HashMap<String, Integer> taskid = new HashMap<String, Integer>(); // arena -> draw task
+	
 	
 	Utils u = null;
 	
 	public int maxplayers_perteam = 0;
-	
-	Plugin vanishnoplugin = null;
 	
 	/*
 	 * Setup:
@@ -97,29 +92,27 @@ public class Main extends JavaPlugin implements Listener {
 		u = new Utils(this);
 		
 		// extra test class
-		getConfig().set("classes.pro.name", "pro");
-		getConfig().set("classes.pro.items", "278#1;17#64;17#64;17#64");
-		this.saveConfig();
+		//getConfig().set("classes.pro.name", "pro");
+		//getConfig().set("classes.pro.items", "278#1;17#64;17#64;17#64");
+		//this.saveConfig();
 		
 		this.loadClasses();
 		
 		/*if (getConfig().getBoolean("config.auto_updating")) {
 			Updater updater = new Updater(this, 68563, this.getFile(), Updater.UpdateType.DEFAULT, false);
 		}*/
-
 		
-		this.vanishnoplugin = getServer().getPluginManager().getPlugin("VanishNoPacket");
 	}
 	
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
-    	if(cmd.getName().equalsIgnoreCase("destroyer") || cmd.getName().equalsIgnoreCase("dest")){
+    	if(cmd.getName().equalsIgnoreCase("thecore") || cmd.getName().equalsIgnoreCase("tc")){
     		if(sender instanceof Player){
     			if(args.length > 0){
     				String action = args[0];
     				if(action.equalsIgnoreCase("createarena")){
-    					// /dest createarena [name]
+    					// /tc createarena [name]
     					if(args.length > 1){
-    						if(sender.hasPermission("destroyer.createarena")){
+    						if(sender.hasPermission("thecore.createarena")){
 	    						String arena = args[1];
 	    						getConfig().set("arenas." + arena + ".name", arena);
 	    						this.saveConfig();
@@ -128,13 +121,13 @@ public class Main extends JavaPlugin implements Listener {
     							sender.sendMessage("§4You don't have permission.");
     						}
     					}else{
-    						sender.sendMessage("§3Usage: §2/dest createarena [name]");
+    						sender.sendMessage("§3Usage: §2/tc createarena [name]");
     					}
     				}else if(action.equalsIgnoreCase("setboundaries")){
-    					// /dest setboundaries {count} [name], where {count} is 1 or 2
+    					// /tc setboundaries {count} [name], where {count} is 1 or 2
     					Player p = (Player)sender;
     					if(args.length > 2){
-    						if(sender.hasPermission("destroyer.createarena")){
+    						if(sender.hasPermission("thecore.createarena")){
 	    						String count = args[1];
 	    						String arena = args[2];
 	    						getConfig().set("arenas." + arena + ".boundary" + count + ".world", p.getWorld().getName());
@@ -147,13 +140,13 @@ public class Main extends JavaPlugin implements Listener {
     							sender.sendMessage("§4You don't have permission.");
     						}
     					}else{
-    						sender.sendMessage("§3Usage: §2/dest setlobby {count} [name]");
+    						sender.sendMessage("§3Usage: §2/tc setlobby {count} [name]");
     					}
     				}else if(action.equalsIgnoreCase("setlobby")){
-    					// /dest setlobby {count} [name], where {count} is 1 or 2
+    					// /tc setlobby {count} [name], where {count} is 1 or 2
     					Player p = (Player)sender;
     					if(args.length > 2){
-    						if(sender.hasPermission("destroyer.createarena")){
+    						if(sender.hasPermission("thecore.createarena")){
 	    						String count = args[1];
 	    						String arena = args[2];
 	    						getConfig().set("arenas." + arena + ".lobby" + count + ".world", p.getWorld().getName());
@@ -166,13 +159,13 @@ public class Main extends JavaPlugin implements Listener {
     							sender.sendMessage("§4You don't have permission.");
     						}
     					}else{
-    						sender.sendMessage("§3Usage: §2/dest setlobby {count} [name]");
+    						sender.sendMessage("§3Usage: §2/tc setlobby {count} [name]");
     					}
     				}else if(action.equalsIgnoreCase("setspawn")){
-    					// /dest setspawn {count} [name], where {count} is 1 or 2
+    					// /tc setspawn {count} [name], where {count} is 1 or 2
     					Player p = (Player)sender;
     					if(args.length > 2){
-    						if(sender.hasPermission("destroyer.createarena")){
+    						if(sender.hasPermission("thecore.createarena")){
 	    						String count = args[1];
 	    						String arena = args[2];
 	    						getConfig().set("arenas." + arena + ".spawn" + count + ".world", p.getWorld().getName());
@@ -185,20 +178,20 @@ public class Main extends JavaPlugin implements Listener {
     							sender.sendMessage("§4You don't have permission.");
     						}
     					}else{
-    						sender.sendMessage("§3Usage: §2/dest setspawn {count} [name]");
+    						sender.sendMessage("§3Usage: §2/tc setspawn {count} [name]");
     					}
     				}else if(action.equalsIgnoreCase("setbeacon")){
-    					// /dest setbeacon {count} [name], where {count} is 1 or 2
+    					// /tc setbeacon {count} [name], where {count} is 1 or 2
     					Player p = (Player)sender;
     					if(args.length > 2){
-    						if(sender.hasPermission("destroyer.createarena")){
+    						if(sender.hasPermission("thecore.createarena")){
 	    						String count = args[1];
 	    						String arena = args[2];
 	    						getConfig().set("arenas." + arena + ".beacon" + count + ".world", p.getWorld().getName());
 	    						getConfig().set("arenas." + arena + ".beacon" + count + ".location.x", p.getLocation().getBlockX());
 	    						getConfig().set("arenas." + arena + ".beacon" + count + ".location.y", p.getLocation().getBlockY());
 	    						getConfig().set("arenas." + arena + ".beacon" + count + ".location.z", p.getLocation().getBlockZ());
-	    						sender.sendMessage("§2Beacon " + count + " registered. PLEASE DO NOT DESTROY THIS BEACON! Use /dest removebeacon {count} [name] !");
+	    						sender.sendMessage("§2Beacon " + count + " registered. PLEASE DO NOT tcROY THIS BEACON! Use /tc removebeacon {count} [name] !");
 	    						this.saveConfig();
 	    						Block b = p.getWorld().getBlockAt(p.getLocation());
 	    						b.setType(Material.BEACON);
@@ -222,12 +215,12 @@ public class Main extends JavaPlugin implements Listener {
     							sender.sendMessage("§4You don't have permission.");
     						}
     					}else{
-    						sender.sendMessage("§3Usage: §2/dest setbeacon {count} [name]");
+    						sender.sendMessage("§3Usage: §2/tc setbeacon {count} [name]");
     					}
     				}else if(action.equalsIgnoreCase("removearena")){
-    					// /dest removearena [name]
+    					// /tc removearena [name]
     					if(args.length > 1){
-    						if(sender.hasPermission("destroyer.removearena")){
+    						if(sender.hasPermission("thecore.removearena")){
 	    						String arena = args[1];
 	    						getConfig().set("arenas." + arena, null);
 	    						this.saveConfig();
@@ -236,13 +229,13 @@ public class Main extends JavaPlugin implements Listener {
     							sender.sendMessage("§4You don't have permission.");
     						}
     					}else{
-    						sender.sendMessage("§3Usage: §2/dest removearena [name]");
+    						sender.sendMessage("§3Usage: §2/tc removearena [name]");
     					}
     				}else if(action.equalsIgnoreCase("removebeacon")){
-    					// /dest removebeacon {count} [name]
+    					// /tc removebeacon {count} [name]
     					Player p = (Player)sender;
     					if(args.length > 2){
-    						if(sender.hasPermission("destroyer.removearena")){
+    						if(sender.hasPermission("thecore.removearena")){
 	    						String count = args[1];
 	    						String arena = args[2];
 	    						try{
@@ -256,22 +249,23 @@ public class Main extends JavaPlugin implements Listener {
 	    						sender.sendMessage("§2Successfully removed beacon " + count + " for arena '§3" + arena + "§2'.");	
     						}
     					}else{
-    						sender.sendMessage("§3Usage: §2/dest removearena [name]");
+    						sender.sendMessage("§3Usage: §2/tc removearena [name]");
     					}
     				}else if(action.equalsIgnoreCase("changeclass")){
-    					// /dest changeclass [name]
+    					// /tc changeclass [name]
     					Player p = (Player)sender;
     					if(args.length > 1){
-    						if(p.hasPermission("destroyer.changeclass")){
+    						if(p.hasPermission("thecore.changeclass")){
 	    						if(arenap.containsKey(p.getName())){
 	    							if(aclasses.containsKey(args[1])){
 	    								if(p.hasPermission("tc.class." + args[1])){
 	    									this.setClass(args[1], p.getName());
+	    									sender.sendMessage("§2Class successfully set!");
 	    								}
 	    							}else{
 	    								String all = "";
 	    								for(String class_ : aclasses.keySet()){
-	    									all += class_ + ",";
+	    									all += class_ + ", ";
 	    								}
 	    								sender.sendMessage("§4This is not a valid class. Possible ones: §3" + all.substring(0, all.length() - 1));
 	    							}
@@ -280,17 +274,18 @@ public class Main extends JavaPlugin implements Listener {
 	    						}
     						}
     					}else{
-    						sender.sendMessage("§3Usage: §2/dest changeclass [name].");
+    						sender.sendMessage("§3Usage: §2/tc changeclass [name].");
     					}
     				}else if(action.equalsIgnoreCase("spectate")){
-    					// /dest changeclass [name]
+    					// /tc spectate [name]
     					Player p = (Player)sender;
     					if(args.length > 1){
-    						if(p.hasPermission("destroyer.spectate")){
+    						if(p.hasPermission("thecore.spectate")){
 	    						spectateArena(p.getName(), args[1]);
+	    						sender.sendMessage("§2Toggled spectator mode");
     						}
     					}else{
-    						sender.sendMessage("§3Usage: §2/dest spectate [name].");
+    						sender.sendMessage("§3Usage: §2/tc spectate [name].");
     					}
     				}else if(action.equalsIgnoreCase("leave")){
     					Player p = (Player)sender;
@@ -300,8 +295,8 @@ public class Main extends JavaPlugin implements Listener {
     						sender.sendMessage("§4You're not in an arena right now!");
     					}
     				}else if(action.equalsIgnoreCase("list")){
-    					// /dest list
-    					if(sender.hasPermission("destroyer.listarenas")){
+    					// /tc list
+    					if(sender.hasPermission("thecore.listarenas")){
     						if(getConfig().isSet("arenas")){
     							sender.sendMessage("§2Arenas: ");
 	    						for(String arena : getConfig().getConfigurationSection("arenas.").getKeys(false)){
@@ -312,34 +307,34 @@ public class Main extends JavaPlugin implements Listener {
     						}
     					}
     				}else if(action.equalsIgnoreCase("reload")){
-    					// /dest list
-    					if(sender.hasPermission("destroyer.reload")){
+    					// /tc list
+    					if(sender.hasPermission("thecore.reload")){
     						this.reloadConfig();
     						sender.sendMessage("§2Successfully reloaded config!");
     					}
     				}else if(action.equalsIgnoreCase("stats")){
-    					// /dest stats
+    					// /tc stats
     					Player p = (Player)sender;
     					String name = p.getName();
     					
-    					p.sendMessage("§3Destroyer statistics: ");
+    					p.sendMessage("§3thecore statistics: ");
     					p.sendMessage("§3Team Wins: §2" + this.getStatsComponent(name, "teamwin"));
     					p.sendMessage("§3Team Loses: §4" + this.getStatsComponent(name, "teamlose"));
     					p.sendMessage("§3Kills: §2" + this.getStatsComponent(name, "kills"));
     					p.sendMessage("§3Deaths: §4" + this.getStatsComponent(name, "deaths"));
     				}else if(action.equalsIgnoreCase("help")){
-    					// /dest help
+    					// /tc help
     					sender.sendMessage("§6----------------");
     					sender.sendMessage("§2Do the following to set up an arena: ");
-    					sender.sendMessage("§3/dest createarena [name]");
-    					sender.sendMessage("§3/dest setboundaries 1 [name] §2and §3/dest setboundaries 2 [name]");
-    					sender.sendMessage("§3/dest setspawn 1 [name] §2and §3/dest setspawn 2 [name]");
-    					sender.sendMessage("§3/dest setlobby 1 [name] §2and §3/dest setlobby 2 [name]");
-    					sender.sendMessage("§3/dest setbeacon 1 [name] §2and §3/dest setbeacon 2 [name]");
-    					sender.sendMessage("§2Important: §3/dest savearena [name]");
+    					sender.sendMessage("§3/tc createarena [name]");
+    					sender.sendMessage("§3/tc setboundaries 1 [name] §2and §3/tc setboundaries 2 [name]");
+    					sender.sendMessage("§3/tc setspawn 1 [name] §2and §3/tc setspawn 2 [name]");
+    					sender.sendMessage("§3/tc setlobby 1 [name] §2and §3/tc setlobby 2 [name]");
+    					sender.sendMessage("§3/tc setbeacon 1 [name] §2and §3/tc setbeacon 2 [name]");
+    					sender.sendMessage("§2Important: §3/tc savearena [name]");
     					sender.sendMessage("§6----------------");
     				}else if(action.equalsIgnoreCase("savearena")){
-    					if(sender.hasPermission("destroyer.savearena")){
+    					if(sender.hasPermission("thecore.savearena")){
 	    					if(args.length > 1){
 	    						if(isValidArena(args[1])){
 		    						File f = new File(this.getDataFolder() + "/" + args[1]);
@@ -350,7 +345,7 @@ public class Main extends JavaPlugin implements Listener {
 	    						}
 								
 							}else{
-								sender.sendMessage("§3Usage: §2/dest savearena [name]");
+								sender.sendMessage("§3Usage: §2/tc savearena [name]");
 							}	
     					}else{
     						sender.sendMessage("§4You don't have permission.");
@@ -359,12 +354,12 @@ public class Main extends JavaPlugin implements Listener {
     			}else{
     				sender.sendMessage("§6----------------");
     				sender.sendMessage("§2Do the following to set up an arena: ");
-					sender.sendMessage("§3/dest createarena [name]");
-					sender.sendMessage("§3/dest setboundaries 1 [name] §2and §3/dest setboundaries 2 [name]");
-					sender.sendMessage("§3/dest setspawn 1 [name] §2and §3/dest setspawn 2 [name]");
-					sender.sendMessage("§3/dest setlobby 1 [name] §2and §3/dest setlobby 2 [name]");
-					sender.sendMessage("§3/dest setbeacon 1 [name] §2and §3/dest setbeacon 2 [name]");
-					sender.sendMessage("§2Important: §3/dest savearena [name]");
+					sender.sendMessage("§3/tc createarena [name]");
+					sender.sendMessage("§3/tc setboundaries 1 [name] §2and §3/tc setboundaries 2 [name]");
+					sender.sendMessage("§3/tc setspawn 1 [name] §2and §3/tc setspawn 2 [name]");
+					sender.sendMessage("§3/tc setlobby 1 [name] §2and §3/tc setlobby 2 [name]");
+					sender.sendMessage("§3/tc setbeacon 1 [name] §2and §3/tc setbeacon 2 [name]");
+					sender.sendMessage("§2Important: §3/tc savearena [name]");
 					sender.sendMessage("§6----------------");
     			}
     			return true;
@@ -372,7 +367,7 @@ public class Main extends JavaPlugin implements Listener {
     			sender.sendMessage("§2Please execute this command ingame!");
     			return true;
     		}
-    	}else if(cmd.getName().equalsIgnoreCase("destadmin")){
+    	}else if(cmd.getName().equalsIgnoreCase("tcadmin")){
     		if(sender.isOp()){
 	    		if(args.length > 0){
 	    			String action = args[0];
@@ -380,19 +375,23 @@ public class Main extends JavaPlugin implements Listener {
 						if(args.length > 1){
 							resetArena(args[1]);
 						}else{
-							sender.sendMessage("§3Usage: §2/destadmin reset [name]");
+							sender.sendMessage("§3Usage: §2/tcadmin reset [name]");
 						}
 					}else if(action.equalsIgnoreCase("start")){
 						if(args.length > 1){
-							startArena(args[1]);
+							if(isValidArena(args[1])){
+								startArena(args[1]);
+							}else{
+								sender.sendMessage("§4Arena could not be found.");
+							}
 						}else{
-							sender.sendMessage("§3Usage: §2/destadmin start [name]");
+							sender.sendMessage("§3Usage: §2/tcadmin start [name]");
 						}
 					}else if(action.equalsIgnoreCase("end")){
 						if(args.length > 1){
 							resetArena(args[1]);
 						}else{
-							sender.sendMessage("§3Usage: §2/destadmin end [name]");
+							sender.sendMessage("§3Usage: §2/tcadmin end [name]");
 						}
 					}else if(action.equalsIgnoreCase("savearena")){
 						if(args.length > 1){
@@ -400,7 +399,7 @@ public class Main extends JavaPlugin implements Listener {
 							f.delete();
 							saveArenaToFile(args[1]);
 						}else{
-							sender.sendMessage("§3Usage: §2/destadmin savearena [name]");
+							sender.sendMessage("§3Usage: §2/tcadmin savearena [name]");
 						}
 					}
 	    		}
@@ -441,7 +440,7 @@ public class Main extends JavaPlugin implements Listener {
     public void onSignChange(SignChangeEvent event) {
         Player p = event.getPlayer();
         if(event.getLine(0).toLowerCase().contains("[destroyer]")){
-        	if(event.getPlayer().hasPermission("destroyer.sign")){
+        	if(event.getPlayer().hasPermission("thecore.sign")){
 	        	event.setLine(0, "§2[Destroyer]");
 	        	if(!event.getLine(1).equalsIgnoreCase("")){
 	        		String arena = event.getLine(1);
@@ -462,7 +461,7 @@ public class Main extends JavaPlugin implements Listener {
 	        	}
         	}
         }else if(event.getLine(0).toLowerCase().contains("[d-class]")){
-        	if(event.getPlayer().hasPermission("destroyer.sign")){
+        	if(event.getPlayer().hasPermission("thecore.sign")){
 	        	event.setLine(0, "§2[D-Class]");
 	        	event.getPlayer().sendMessage("§2You have successfully created a class sign for Destroyer!");
         	}
@@ -527,33 +526,44 @@ public class Main extends JavaPlugin implements Listener {
 		if(isOnline(player)){
 			Player p = getServer().getPlayer(player);
 			
-			try {
-				if(pspectate.containsKey(p.getName())){
-					pspectate.remove(p.getName());
-					p.setFlying(false);
-					p.setAllowFlight(false);
-					final Location t = getComponentFromArena(arena, "lobby", "1");
-					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-						@Override
-						public void run() {
-							getServer().getPlayer(player).teleport(t);
+			if(pspectate.containsKey(p.getName())){
+				pspectate.remove(p.getName());
+				p.setFlying(false);
+				p.setAllowFlight(false);
+				final Location t = getComponentFromArena(arena, "lobby", "1");
+				Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+					@Override
+					public void run() {
+						getServer().getPlayer(player).teleport(t);
+					}
+				}, 10);
+				
+				for(final String player_ : arenap.keySet()){
+					if(arenap.get(player_).equalsIgnoreCase(arena)){
+						if(isOnline(player_)){
+							getServer().getPlayer(player_).showPlayer(getServer().getPlayer(player));
 						}
-					}, 10);
-				}else{
-					pspectate.put(p.getName(), true);
-					p.setFlying(true);
-					p.setAllowFlight(true);
-					final Location t = getComponentFromArena(arena, "spawn", "1");
-					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-						@Override
-						public void run() {
-							getServer().getPlayer(player).teleport(t);
-						}
-					}, 10);
+					}
 				}
-				VanishNoPacket.toggleVanishSilent(p);
-			} catch (VanishNotLoadedException e) {
-				getLogger().warning("VanishNoPacket was not loaded! Spectating doesn't work.");
+			}else{
+				pspectate.put(p.getName(), true);
+				p.setFlying(true);
+				p.setAllowFlight(true);
+				final Location t = getComponentFromArena(arena, "spawn", "1");
+				Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+					@Override
+					public void run() {
+						getServer().getPlayer(player).teleport(t);
+					}
+				}, 10);
+				
+				for(final String player_ : arenap.keySet()){
+					if(arenap.get(player_).equalsIgnoreCase(arena)){
+						if(isOnline(player_)){
+							getServer().getPlayer(player_).hidePlayer(getServer().getPlayer(player));
+						}
+					}
+				}
 			}
 		}
 		
@@ -631,12 +641,14 @@ public class Main extends JavaPlugin implements Listener {
 			}
 		}
 		
-		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+		int id = Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 			@Override
 			public void run() {
 				ArenaDraw(arena);
 			}
 		}, getConfig().getInt("config.minutes_per_game") * 1200);
+		
+		taskid.put(arena, id);
 	}
 	
 	public void leaveArena(final String player, String arena){
@@ -664,6 +676,10 @@ public class Main extends JavaPlugin implements Listener {
 		Sign s = this.getSignFromArena(arena);
 		s.setLine(3, Integer.toString(arenapcount.get(arena)) + "/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
+		
+		if(count < 2){
+			resetArena(arena);
+		}
 	}
 	
 	public void resetArena(final String arena){
@@ -707,6 +723,14 @@ public class Main extends JavaPlugin implements Listener {
 		s.setLine(2, "§6[restarting]");
 		s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
+		
+		// cancel draw task
+		try{
+			Bukkit.getServer().getScheduler().cancelTask(taskid.get(arena));
+			taskid.remove(arena);
+		}catch(Exception e){
+			
+		}
 	}
 	
 	public void ArenaDraw(String arena){ // if time runs out -> draw
@@ -743,7 +767,7 @@ public class Main extends JavaPlugin implements Listener {
 					int nbef = Integer.parseInt(this.getStatsComponent(player, "teamlose")) + 1;
 					this.saveStatsComponent(player, "teamlose", Integer.toString(nbef));
 					if(getServer().getPlayer(player).isOnline()){
-						getServer().getPlayer(player).sendMessage("§2Congratulations, you won this game!");
+						getServer().getPlayer(player).sendMessage("§2You lost this game!");
 					}
 				}
 			}
@@ -755,6 +779,8 @@ public class Main extends JavaPlugin implements Listener {
 		// save in stats if you die
 		int nbef = Integer.parseInt(this.getStatsComponent(player, "deaths")) + 1;
 		this.saveStatsComponent(player, "deaths", Integer.toString(nbef));
+		
+		getClass(player);
 	}
 	
 	public void kill(String player){
@@ -826,6 +852,11 @@ public class Main extends JavaPlugin implements Listener {
 				if(!compareTwoLocations(event.getBlock().getLocation(), this.getComponentFromArena(arenap.get(p.getName()), "beacon", Integer.toString(pteam.get(p.getName()))))){
 					int teamint = pteam.get(p.getName());
 					teamWin(arenap.get(p.getName()), teamint);
+					if(teamint == 1){
+						teamLose(arenap.get(p.getName()), 2);
+					}else{
+						teamLose(arenap.get(p.getName()), 1);
+					}
 					event.setCancelled(true);
 				}else{
 					event.setCancelled(true);
@@ -886,20 +917,19 @@ public class Main extends JavaPlugin implements Listener {
     		if(arenap.containsKey(p2.getName())){
 	    		if(event.getEntity().getKiller() != null){
 	    			if(event.getEntity().getKiller() instanceof Player){
-	    				Player p1 = event.getEntity().getKiller();
+	    				final Player p1 = event.getEntity().getKiller();
 	    				if(arenap.containsKey(p1.getName())){
 		    				event.getEntity().setHealth(20);
 							String arena = arenap.get(p1.getName());
 							p2.playSound(p2.getLocation(), Sound.CAT_MEOW, 1F, 1);
-			
-							die(p2.getName());
-							kill(p1.getName());
 			
 							final Location t = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(p2.getName())));
 							Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 								@Override
 								public void run() {
 									p2.teleport(t);
+									die(p2.getName());
+									kill(p1.getName());
 								}
 							}, 5);
 	    				}
@@ -909,13 +939,12 @@ public class Main extends JavaPlugin implements Listener {
 					String arena = arenap.get(p2.getName());
 					p2.playSound(p2.getLocation(), Sound.CAT_MEOW, 1F, 1);
 	
-					die(p2.getName());
-	
 					final Location t = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(p2.getName())));
 					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 						@Override
 						public void run() {
 							p2.teleport(t);
+							die(p2.getName());
 						}
 					}, 5);
 	    		}	

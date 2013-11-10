@@ -1,17 +1,17 @@
-name: Destroyer
+name: TheCore
 main: com.comze_instancelabs.destroyerminigame.Main
 version: 1.0
 author: instancelabs
 permissions:
-  destroyer.sign:
+  thecore.sign:
     description: Gives access to create signs for joining games.
 commands:
-   destroyer:
+   thecore:
       description: Main command
-      usage: /destroyer [name]
-   destadmin:
+      usage: /thecore [name]
+   tcadmin:
       description: Main command
-      usage: /destroyer [name]
-   dest:
+      usage: /tcadmin [name]
+   tc:
       description: Main command
-      usage: /destroyer [name]
+      usage: /tc [name]
