@@ -1,4 +1,4 @@
-Destroyer
+Destroyer (new: TheCore)
 =========
 
 A bigger new minigame plugin for bukkit
@@ -25,19 +25,19 @@ The setup is pretty big though..
 
 
 
-* /dest createarena [name]
-* /dest setboundaries {count} [name]
-* /dest setspawn {count} [name]	
-* /dest setlobby {count} [name]
-* /dest setbeacon {count} [name]
+* /tc createarena [name]
+* /tc setboundaries {count} [name]
+* /tc setspawn {count} [name]	
+* /tc setlobby {count} [name]
+* /tc setbeacon {count} [name]
  
 
 [IMPORTANT] after you built the arena map:
 
 
-* /destadmin savearena [name]
+* /tcadmin savearena [name]
 
 
 
 
-BukkitDev project page: [Destroyer](http:/dev.bukkit.org/bukkit-plugins/destroyer/)
+(BukkitDev project page: [Destroyer](http:/dev.bukkit.org/bukkit-plugins/destroyer/))
