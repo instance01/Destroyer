@@ -16,7 +16,7 @@ All features:
 * player stats
 * teams
 * commands for admins
-* [maybe later on spectator mode]
+* spectator mode
 * fully automatical (auto restores map)
 
 
@@ -25,17 +25,17 @@ The setup is pretty big though..
 
 
 
-* /tc createarena [name]
-* /tc setboundaries {count} [name]
-* /tc setspawn {count} [name]	
-* /tc setlobby {count} [name]
-* /tc setbeacon {count} [name]
+* `/tc createarena [name]`
+* `/tc setboundaries {count} [name]`
+* `/tc setspawn {count} [name]	`
+* `/tc setlobby {count} [name]`
+* `/tc setbeacon {count} [name]`
  
 
-[IMPORTANT] after you built the arena map:
+IMPORTANT: after you built the arena map:
 
 
-* /tcadmin savearena [name]
+* `/tcadmin savearena [name]`
 
 
 
