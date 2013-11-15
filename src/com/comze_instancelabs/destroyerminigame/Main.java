@@ -20,6 +20,8 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -28,16 +30,20 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.scoreboard.Team;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 
@@ -56,6 +62,9 @@ public class Main extends JavaPlugin implements Listener {
 	public static HashMap<String, AClass> aclasses = new HashMap<String, AClass>(); // classname -> class
 	public static HashMap<String, Integer> taskid = new HashMap<String, Integer>(); // arena -> draw task
 	
+	public static HashMap<String, Boolean> pvpenabled = new HashMap<String, Boolean>(); // player -> pvp enabled or not
+
+	//public static HashMap<String, ItemStack[]> pinv = new HashMap<String, ItemStack[]>(); // player -> inventory
 	
 	Utils u = null;
 	
@@ -276,6 +285,21 @@ public class Main extends JavaPlugin implements Listener {
     					}else{
     						sender.sendMessage("§3Usage: §2/tc changeclass [name].");
     					}
+    				}else if(action.equalsIgnoreCase("join")){
+    					// /tc join [name]
+    					Player p = (Player)sender;
+    					if(args.length > 1){
+    						String arena = args[1];
+    						if(isValidArena(arena)){
+                    			if(!arenap.containsKey(p.getName())){
+                    				joinArena(p.getName(), arena);	
+                    			}
+                        	}else{
+                        		p.sendMessage("§4This arena is set up wrong.");
+                        	}
+    					}else{
+    						sender.sendMessage("§3Usage: §2/tc changeclass [name].");
+    					}
     				}else if(action.equalsIgnoreCase("spectate")){
     					// /tc spectate [name]
     					Player p = (Player)sender;
@@ -335,11 +359,12 @@ public class Main extends JavaPlugin implements Listener {
     					sender.sendMessage("§6----------------");
     				}else if(action.equalsIgnoreCase("savearena")){
     					if(sender.hasPermission("thecore.savearena")){
+    						Player p = (Player)sender;
 	    					if(args.length > 1){
 	    						if(isValidArena(args[1])){
 		    						File f = new File(this.getDataFolder() + "/" + args[1]);
 									f.delete();
-									saveArenaToFile(args[1]);	
+									saveArenaToFile(p.getName(), args[1]);	
 	    						}else{
 	    							sender.sendMessage("§4The arena appears to be invalid (missing components)!");
 	    						}
@@ -419,10 +444,12 @@ public class Main extends JavaPlugin implements Listener {
 	        {
 	            final Sign s = (Sign) event.getClickedBlock().getState();
 
-                if (s.getLine(0).equalsIgnoreCase("§2[thecore]")){
+                if (s.getLine(0).equalsIgnoreCase("§1[the core]")){
                 	if(isValidArena(s.getLine(1).substring(2))){
                 		if(s.getLine(2).equalsIgnoreCase("§2[join]")){
-                			joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));
+                			if(!arenap.containsKey(event.getPlayer().getName())){
+                				joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));	
+                			}
                 		}
                 	}else{
                 		event.getPlayer().sendMessage("§4This arena is set up wrong.");
@@ -441,7 +468,7 @@ public class Main extends JavaPlugin implements Listener {
         Player p = event.getPlayer();
         if(event.getLine(0).toLowerCase().contains("[thecore]")){
         	if(event.getPlayer().hasPermission("thecore.sign")){
-	        	event.setLine(0, "§2[thecore]");
+	        	event.setLine(0, "§1[The Core]");
 	        	if(!event.getLine(1).equalsIgnoreCase("")){
 	        		String arena = event.getLine(1);
 	        		if(isValidArena(arena)){
@@ -571,6 +598,9 @@ public class Main extends JavaPlugin implements Listener {
 	
 	
 	public void joinArena(final String player, String arena){
+		// disable pvp:
+		pvpenabled.put(player, false);
+		
 		// prepare player
 		arenap.put(player, arena);
 		int count = 1;
@@ -619,7 +649,7 @@ public class Main extends JavaPlugin implements Listener {
 	
 	public void startArena(final String arena){
 		Sign s = this.getSignFromArena(arena);
-		s.setLine(2, "§4[ingame]");
+		s.setLine(2, "§4[Ingame]");
 		s.setLine(3, Integer.toString(arenapcount.get(arena)) + "/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
 		
@@ -627,6 +657,9 @@ public class Main extends JavaPlugin implements Listener {
 			if(arenap.get(player).equalsIgnoreCase(arena)){
 				if(isOnline(player)){
 					getServer().getPlayer(player).sendMessage("§3The game has started!");
+					
+					// enable pvp again
+					pvpenabled.put(player, true);
 					
 					final Location t = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(player)));
 					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
@@ -649,6 +682,8 @@ public class Main extends JavaPlugin implements Listener {
 		}, getConfig().getInt("config.minutes_per_game") * 1200);
 		
 		taskid.put(arena, id);
+		
+		this.updateScoreboardTEAMS();
 	}
 	
 	public void leaveArena(final String player, String arena){
@@ -683,9 +718,18 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	public void resetArena(final String arena){
+		boolean itemsreset = false;
 		for(final String player : arenap.keySet()){
 			if(arenap.get(player).equalsIgnoreCase(arena)){
 				if(isOnline(player)){
+					if(!itemsreset){
+						for(Entity tt : getServer().getPlayer(player).getNearbyEntities(40, 40, 40)){
+		    				if(tt.getPassenger() == null && tt.getType() != EntityType.ITEM_FRAME && tt.getType() != EntityType.PAINTING && tt.getType() != EntityType.PLAYER && tt.getType() != EntityType.BOAT && tt.getType() != EntityType.HORSE){
+		    					tt.remove();
+		    				}
+				    	}
+						itemsreset = true;
+					}
 					final Location t = getComponentFromArena(arena, "lobby", "1");
 					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 						@Override
@@ -720,7 +764,7 @@ public class Main extends JavaPlugin implements Listener {
 		
 	    
 		Sign s = this.getSignFromArena(arena);
-		s.setLine(2, "§6[restarting]");
+		s.setLine(2, "§6[Restarting]");
 		s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
 		
@@ -731,6 +775,8 @@ public class Main extends JavaPlugin implements Listener {
 		}catch(Exception e){
 			
 		}
+		
+		this.updateScoreboardTEAMS();
 	}
 	
 	public void ArenaDraw(String arena){ // if time runs out -> draw
@@ -792,10 +838,103 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	
+	@Deprecated
+	public void updateScoreboardBELOW_NAME(){
+		ScoreboardManager manager = Bukkit.getScoreboardManager();
+		Scoreboard board = manager.getNewScoreboard();
+		Scoreboard board2 = manager.getNewScoreboard();
+		
+		Objective objective = board.registerNewObjective("teamred", "dummy");
+		objective.setDisplaySlot(DisplaySlot.BELOW_NAME);
+		objective.setDisplayName("§4TEAM");
+		
+		Objective objective2 = board2.registerNewObjective("teamblue", "dummy");
+		objective2.setDisplaySlot(DisplaySlot.BELOW_NAME);
+		objective2.setDisplayName("§1TEAM");
+		 
+		//for (Player online : Bukkit.getOnlinePlayers()) {
+			//Score score = objective.getScore(online);
+			//score.setScore(0);
+		//}
+		
+		for(String player : arenap.keySet()){
+			if(isOnline(player)){
+				if(pteam.get(player) == 1){
+					getServer().getPlayer(player).setScoreboard(board);
+				}else{
+					getServer().getPlayer(player).setScoreboard(board2);
+				}
+			}
+		}
+	}
+	
+	public void updateScoreboardTEAMS(){
+		ScoreboardManager manager = Bukkit.getScoreboardManager();
+		Scoreboard board = manager.getNewScoreboard();
+		
+		Team teamred = board.registerNewTeam("teamred");
+		Team teamblue = board.registerNewTeam("teamblue");
+		
+		//teamred.setCanSeeFriendlyInvisibles(true);
+		teamred.setAllowFriendlyFire(false);
+		teamred.setPrefix("§3[TC] §4");
+		teamred.setDisplayName("§3[TC] §4");
+		//teamblue.setCanSeeFriendlyInvisibles(true);
+		teamblue.setAllowFriendlyFire(false);
+		teamblue.setPrefix("§3[TC] §1");
+		teamblue.setDisplayName("§3[TC] §1");
+		
+		for(Player p : Bukkit.getOnlinePlayers()){
+			if(arenap.containsKey(p.getName())){
+				if(pteam.get(p.getName()) == 1){
+					teamred.addPlayer(p);
+				}else{
+					teamblue.addPlayer(p);
+				}
+			}else{
+				if(teamred.hasPlayer(p)){
+					teamred.removePlayer(p);
+				}
+				if(teamblue.hasPlayer(p)){
+					teamblue.removePlayer(p);
+				}
+			}
+		}
+	}
+	
+	public void updateScoreboardSIDEBAR(String arena, int time){
+		ScoreboardManager manager = Bukkit.getScoreboardManager();
+		Scoreboard board = manager.getNewScoreboard();
+		
+		Objective objective = board.registerNewObjective(arena, "dummy");
+		objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+		objective.setDisplayName("§3TheCore");
+		
+		
+		Score score = objective.getScore(Bukkit.getOfflinePlayer("§aTime left: "));
+		score.setScore(time);
+		Score score2 = objective.getScore(Bukkit.getOfflinePlayer("§aArena: " + arena));
+		
+		//for (Player online : Bukkit.getOnlinePlayers()) {
+			//Score score = objective.getScore(online);
+			//score.setScore(0);
+		//}
+		
+		for(String player : arenap.keySet()){
+			if(arenap.get(player).equalsIgnoreCase(arena)){
+				if(isOnline(player)){
+					getServer().getPlayer(player).setScoreboard(board);
+				}	
+			}
+		}
+	}
+	
+	
 	public void getClass(String player){
 		AClass c = pclass.get(player);
 		if(isOnline(player)){
 			getServer().getPlayer(player).getInventory().clear();
+			getServer().getPlayer(player).getInventory().setArmorContents(null);
 			getServer().getPlayer(player).updateInventory();
 			for(ItemStack i : c.items){
 				getServer().getPlayer(player).getInventory().addItem(i);
@@ -932,6 +1071,8 @@ public class Main extends JavaPlugin implements Listener {
 									kill(p1.getName());
 								}
 							}, 5);
+							p1.sendMessage("§2You killed " + p2.getName() + "!");
+							p2.sendMessage("§4You got killed by " + p1.getName() + "!");
 	    				}
 	    			}
 	    		}else{
@@ -959,15 +1100,77 @@ public class Main extends JavaPlugin implements Listener {
     public void onEntityDamage(EntityDamageEvent event){
     	if(event.getEntity() instanceof Player){
     		Player p = (Player)event.getEntity();
-    		if(event.getCause() == DamageCause.STARVATION){
-    			if(arenap.containsKey(p.getName())){
+    		if(arenap.containsKey(p.getName())){
+    			if(!pvpenabled.get(p.getName())){
     				event.setCancelled(true);
     			}
     		}
     	}
     }
     
+    @EventHandler
+    public void onHunger(FoodLevelChangeEvent event){
+    	if(event.getEntity() instanceof Player){
+    		Player p = (Player)event.getEntity();
+    		if(arenap.containsKey(p.getName())){
+    			event.setCancelled(true);
+    		}
+    	}
+    }
+    
+    public void saveArenaToFile(String player, String arena){
+    	File f = new File(this.getDataFolder() + "/" + arena);
+    	Cuboid c = new Cuboid(this.getComponentFromArena(arena, "boundary", "1"), this.getComponentFromArena(arena, "boundary", "2"));
+    	Location start = c.getLowLoc();
+    	Location end = c.getHighLoc();
 
+		int width = end.getBlockX() - start.getBlockX();
+		int length = end.getBlockZ() - start.getBlockZ();
+		int height = end.getBlockY() - start.getBlockY();
+		
+		getLogger().info("BOUNDS: " + Integer.toString(width) + " " + Integer.toString(height) +  " " + Integer.toString(length)); 
+		getLogger().info("BLOCKS TO SAVE: " + Integer.toString(width * height * length));
+		
+		FileOutputStream fos;
+		ObjectOutputStream oos = null;
+		try{
+			fos = new FileOutputStream(f);
+			oos = new BukkitObjectOutputStream(fos);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		
+		for (int i = 0; i <= width; i++) {
+			for (int j = 0; j <= height; j++) {
+				for(int k = 0; k <= length; k++){
+					Block change = c.getWorld().getBlockAt(start.getBlockX() + i, start.getBlockY() + j, start.getBlockZ() + k);
+					
+					//if(change.getType() != Material.AIR){
+						ArenaBlock bl = new ArenaBlock(change);
+
+						try {
+							oos.writeObject(bl);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}	
+					//}
+
+				}
+			}
+		}
+		
+		try {
+			oos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		if(isOnline(player)){
+			getServer().getPlayer(player).sendMessage("§2Successfully saved arena.");
+		}
+    }
+    
     public void saveArenaToFile(String arena){
     	File f = new File(this.getDataFolder() + "/" + arena);
     	Cuboid c = new Cuboid(this.getComponentFromArena(arena, "boundary", "1"), this.getComponentFromArena(arena, "boundary", "2"));
@@ -1040,7 +1243,7 @@ public class Main extends JavaPlugin implements Listener {
 					getLogger().info("Finished restoring map for " + arena + ".");
 					
 					Sign s = this.getSignFromArena(arena);
-					s.setLine(2, "§2[join]");
+					s.setLine(2, "§2[Join]");
 					s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 					s.update();
 				}
@@ -1097,7 +1300,7 @@ public class Main extends JavaPlugin implements Listener {
 					getLogger().info("Finished restoring map for " + arena + ".");
 					
 					Sign s = this.getSignFromArena(arena);
-					s.setLine(2, "§2[join]");
+					s.setLine(2, "§2[Join]");
 					s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 					s.update();
 				}
