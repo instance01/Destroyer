@@ -124,6 +124,7 @@ public class Main extends JavaPlugin implements Listener {
     						if(sender.hasPermission("thecore.createarena")){
 	    						String arena = args[1];
 	    						getConfig().set("arenas." + arena + ".name", arena);
+	    						getConfig().set("arenas." + arena + ".enabled", true);
 	    						this.saveConfig();
 	    						sender.sendMessage("§2Successfully started creation of an arena.");	
     						}else{
@@ -291,9 +292,13 @@ public class Main extends JavaPlugin implements Listener {
     					if(args.length > 1){
     						String arena = args[1];
     						if(isValidArena(arena)){
-                    			if(!arenap.containsKey(p.getName())){
-                    				joinArena(p.getName(), arena);	
-                    			}
+    							if(isEnabledArena(arena)){
+	    							if(!arenap.containsKey(p.getName())){
+	                    				joinArena(p.getName(), arena);	
+	                    			}	
+    							}else{
+    								sender.sendMessage("§4This arena is disabled!");
+    							}
                         	}else{
                         		p.sendMessage("§4This arena is set up wrong.");
                         	}
@@ -418,6 +423,30 @@ public class Main extends JavaPlugin implements Listener {
 						}else{
 							sender.sendMessage("§3Usage: §2/tcadmin end [name]");
 						}
+					}else if(action.equalsIgnoreCase("enable")){
+						if(args.length > 1){
+							if(isValidArena(args[1])){
+								getConfig().set("arenas." + args[1] + ".enabled", true);
+								this.saveConfig();
+								sender.sendMessage("§2Successfully enabled §3" + args[1]);	
+							}else{
+								sender.sendMessage("§4Arena could not be found or is missing components.");
+							}
+						}else{
+							sender.sendMessage("§3Usage: §2/tcadmin enable [name]");
+						}
+					}else if(action.equalsIgnoreCase("disable")){
+						if(args.length > 1){
+							if(isValidArena(args[1])){
+								getConfig().set("arenas." + args[1] + ".enabled", false);
+								this.saveConfig();
+								sender.sendMessage("§2Successfully disabled §3" + args[1]);	
+							}else{
+								sender.sendMessage("§4Arena could not be found or is missing components.");
+							}
+						}else{
+							sender.sendMessage("§3Usage: §2/tcadmin disable [name]");
+						}
 					}else if(action.equalsIgnoreCase("savearena")){
 						if(args.length > 1){
 							File f = new File(this.getDataFolder() + "/" + args[1]);
@@ -446,10 +475,14 @@ public class Main extends JavaPlugin implements Listener {
 
                 if (s.getLine(0).equalsIgnoreCase("§1[the core]")){
                 	if(isValidArena(s.getLine(1).substring(2))){
-                		if(s.getLine(2).equalsIgnoreCase("§2[join]")){
-                			if(!arenap.containsKey(event.getPlayer().getName())){
-                				joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));	
-                			}
+                		if(isEnabledArena(s.getLine(1).substring(2))){
+	                		if(s.getLine(2).equalsIgnoreCase("§2[join]")){
+	                			if(!arenap.containsKey(event.getPlayer().getName())){
+	                				joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));	
+	                			}
+	                		}	
+                		}else{
+                			event.getPlayer().sendMessage("§4This arena is disabled!");
                 		}
                 	}else{
                 		event.getPlayer().sendMessage("§4This arena is set up wrong.");
@@ -493,6 +526,16 @@ public class Main extends JavaPlugin implements Listener {
 	        	event.getPlayer().sendMessage("§2You have successfully created a class sign for TheCore!");
         	}
         }
+	}
+	
+	
+	public boolean isEnabledArena(String arena){
+		if(isValidArena(arena)){
+			if(getConfig().getBoolean("arenas." + arena + ".enabled")){
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public boolean isValidArena(String arena){
