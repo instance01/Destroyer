@@ -353,15 +353,7 @@ public class Main extends JavaPlugin implements Listener {
     					p.sendMessage("§3Deaths: §4" + this.getStatsComponent(name, "deaths"));
     				}else if(action.equalsIgnoreCase("help")){
     					// /tc help
-    					sender.sendMessage("§6----------------");
-    					sender.sendMessage("§2Do the following to set up an arena: ");
-    					sender.sendMessage("§3/tc createarena [name]");
-    					sender.sendMessage("§3/tc setboundaries 1 [name] §2and §3/tc setboundaries 2 [name]");
-    					sender.sendMessage("§3/tc setspawn 1 [name] §2and §3/tc setspawn 2 [name]");
-    					sender.sendMessage("§3/tc setlobby 1 [name] §2and §3/tc setlobby 2 [name]");
-    					sender.sendMessage("§3/tc setbeacon 1 [name] §2and §3/tc setbeacon 2 [name]");
-    					sender.sendMessage("§2Important: §3/tc savearena [name]");
-    					sender.sendMessage("§6----------------");
+    					this.sendHelp(sender);
     				}else if(action.equalsIgnoreCase("savearena")){
     					if(sender.hasPermission("thecore.savearena")){
     						Player p = (Player)sender;
@@ -380,17 +372,12 @@ public class Main extends JavaPlugin implements Listener {
     					}else{
     						sender.sendMessage("§4You don't have permission.");
     					}
+					}else{
+						sender.sendMessage("§4Command action not found or parameters missing.");
+						this.sendHelp(sender);
 					}
     			}else{
-    				sender.sendMessage("§6----------------");
-    				sender.sendMessage("§2Do the following to set up an arena: ");
-					sender.sendMessage("§3/tc createarena [name]");
-					sender.sendMessage("§3/tc setboundaries 1 [name] §2and §3/tc setboundaries 2 [name]");
-					sender.sendMessage("§3/tc setspawn 1 [name] §2and §3/tc setspawn 2 [name]");
-					sender.sendMessage("§3/tc setlobby 1 [name] §2and §3/tc setlobby 2 [name]");
-					sender.sendMessage("§3/tc setbeacon 1 [name] §2and §3/tc setbeacon 2 [name]");
-					sender.sendMessage("§2Important: §3/tc savearena [name]");
-					sender.sendMessage("§6----------------");
+    				this.sendHelp(sender);
     			}
     			return true;
     		}else{
@@ -455,6 +442,9 @@ public class Main extends JavaPlugin implements Listener {
 						}else{
 							sender.sendMessage("§3Usage: §2/tcadmin savearena [name]");
 						}
+					}else{
+						sender.sendMessage("§4Command action not found or parameters missing.");
+						this.sendHelp(sender);
 					}
 	    		}
     		}
@@ -463,6 +453,20 @@ public class Main extends JavaPlugin implements Listener {
     	}
     	return false;
     }
+    
+    
+    public void sendHelp(CommandSender sender){
+    	sender.sendMessage("§6----------------");
+		sender.sendMessage("§2Do the following to set up an arena: ");
+		sender.sendMessage("§3/tc createarena [name]");
+		sender.sendMessage("§3/tc setboundaries 1 [name] §2and §3/tc setboundaries 2 [name]");
+		sender.sendMessage("§3/tc setspawn 1 [name] §2and §3/tc setspawn 2 [name]");
+		sender.sendMessage("§3/tc setlobby 1 [name] §2and §3/tc setlobby 2 [name]");
+		sender.sendMessage("§3/tc setbeacon 1 [name] §2and §3/tc setbeacon 2 [name]");
+		sender.sendMessage("§2Important: §3/tc savearena [name]");
+		sender.sendMessage("§6----------------");
+    }
+    
     
 	@EventHandler
 	public void onSignUse(PlayerInteractEvent event)
@@ -766,9 +770,11 @@ public class Main extends JavaPlugin implements Listener {
 			if(arenap.get(player).equalsIgnoreCase(arena)){
 				if(isOnline(player)){
 					if(!itemsreset){
-						for(Entity tt : getServer().getPlayer(player).getNearbyEntities(40, 40, 40)){
-		    				if(tt.getPassenger() == null && tt.getType() != EntityType.ITEM_FRAME && tt.getType() != EntityType.PAINTING && tt.getType() != EntityType.PLAYER && tt.getType() != EntityType.BOAT && tt.getType() != EntityType.HORSE){
-		    					tt.remove();
+						for(Entity tt : getServer().getPlayer(player).getNearbyEntities(50, 50, 50)){
+		    				if(tt.getType() != EntityType.ITEM_FRAME && tt.getType() != EntityType.PAINTING && tt.getType() != EntityType.PLAYER && tt.getType() != EntityType.BOAT && tt.getType() != EntityType.HORSE){
+		    					if(tt.getPassenger() == null){
+		    						tt.remove();
+		    					}
 		    				}
 				    	}
 						itemsreset = true;
@@ -778,6 +784,7 @@ public class Main extends JavaPlugin implements Listener {
 						@Override
 						public void run() {
 							getServer().getPlayer(player).teleport(t);
+							getServer().getPlayer(player).playSound(getServer().getPlayer(player).getLocation(), Sound.LEVEL_UP, 1F, 1);
 						}
 					}, 10);
 					pteam.remove(player);
