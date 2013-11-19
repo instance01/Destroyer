@@ -1,7 +1,7 @@
-Destroyer (new: TheCore)
+Destroyer (TheCore)
 =========
 
-A bigger new minigame plugin for bukkit
+A bigger new minigame plugin for bukkit.
 
 
 
@@ -18,6 +18,7 @@ All features:
 * commands for admins
 * spectator mode
 * fully automatical (auto restores map)
+* clickable inventory menu for classes
 
 
 
