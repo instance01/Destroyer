@@ -96,6 +96,11 @@ public class Main extends JavaPlugin implements Listener {
 		getConfig().addDefault("config.respawn_time_in_seconds", 5);
 		getConfig().addDefault("config.auto_updating", true);
 		
+		getConfig().addDefault("config.money_rewards", true);
+		getConfig().addDefault("config.money_reward", 100);
+		getConfig().addDefault("config.item_reward_id", 264);
+		getConfig().addDefault("config.item_reward_amount", 1);
+		
 		getConfig().addDefault("classes.default.name", "default");
 		getConfig().addDefault("classes.default.items", "267#1;3#64;3#64");
 		
@@ -904,6 +909,18 @@ public class Main extends JavaPlugin implements Listener {
 					this.saveStatsComponent(player, "teamwin", Integer.toString(nbef));
 					if(getServer().getPlayer(player).isOnline()){
 						getServer().getPlayer(player).sendMessage("§2Congratulations, you won this game!");
+						if(getConfig().getBoolean("config.money_rewards")){
+							//TODO: send money
+						}else{
+							//TODO: handle exception if material id is invalid
+							Player p = getServer().getPlayer(player);
+							try{
+								p.getInventory().addItem(new ItemStack(Material.getMaterial(getConfig().getInt("config.item_reward_id")), getConfig().getInt("config.item_reward_amount")));
+							}catch(Exception e){
+								getLogger().severe("Error while giving out the item reward! Is the item id valid?");
+							}
+							p.updateInventory();
+						}
 					}
 				}
 			}
