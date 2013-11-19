@@ -529,7 +529,9 @@ public class Main extends JavaPlugin implements Listener {
 	                		event.getPlayer().sendMessage("§4This arena is set up wrong.");
 	                	}
 	                }else if(s.getLine(0).equalsIgnoreCase("§2[d-class]")){
-	                	this.giveClassesBook(event.getPlayer().getName());
+	                	if(arenap.containsKey(event.getPlayer().getName())){
+	                		this.giveClassesBook(event.getPlayer().getName());
+	                	}
 	                }
 		        }	
 	    	}
