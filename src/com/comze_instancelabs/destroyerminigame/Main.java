@@ -10,6 +10,9 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import net.minecraft.server.v1_6_R3.NBTTagList;
+import net.minecraft.server.v1_6_R3.NBTTagString;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -20,6 +23,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.v1_6_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -37,6 +41,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
@@ -46,6 +52,7 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
+
 
 
 
@@ -201,7 +208,7 @@ public class Main extends JavaPlugin implements Listener {
 	    						getConfig().set("arenas." + arena + ".beacon" + count + ".location.x", p.getLocation().getBlockX());
 	    						getConfig().set("arenas." + arena + ".beacon" + count + ".location.y", p.getLocation().getBlockY());
 	    						getConfig().set("arenas." + arena + ".beacon" + count + ".location.z", p.getLocation().getBlockZ());
-	    						sender.sendMessage("§2Beacon " + count + " registered. PLEASE DO NOT tcROY THIS BEACON! Use /tc removebeacon {count} [name] !");
+	    						sender.sendMessage("§2Beacon " + count + " registered. PLEASE DO NOT DESTROY THIS BEACON! Use /tc removebeacon {count} [name] !");
 	    						this.saveConfig();
 	    						Block b = p.getWorld().getBlockAt(p.getLocation());
 	    						b.setType(Material.BEACON);
@@ -346,7 +353,7 @@ public class Main extends JavaPlugin implements Listener {
     					Player p = (Player)sender;
     					String name = p.getName();
     					
-    					p.sendMessage("§3thecore statistics: ");
+    					p.sendMessage("§3TheCore statistics: ");
     					p.sendMessage("§3Team Wins: §2" + this.getStatsComponent(name, "teamwin"));
     					p.sendMessage("§3Team Loses: §4" + this.getStatsComponent(name, "teamlose"));
     					p.sendMessage("§3Kills: §2" + this.getStatsComponent(name, "kills"));
@@ -471,31 +478,61 @@ public class Main extends JavaPlugin implements Listener {
 	@EventHandler
 	public void onSignUse(PlayerInteractEvent event)
 	{	
-	    if (event.hasBlock() && event.getAction() == Action.RIGHT_CLICK_BLOCK)
+	    if (event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR)
 	    {
-	        if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN)
-	        {
-	            final Sign s = (Sign) event.getClickedBlock().getState();
+	    	if(event.getPlayer().getItemInHand().getTypeId() == new ItemStack(Material.WRITTEN_BOOK).getTypeId()){
+        		if(arenap.containsKey(event.getPlayer().getName())){
 
-                if (s.getLine(0).equalsIgnoreCase("§1[the core]")){
-                	if(isValidArena(s.getLine(1).substring(2))){
-                		if(isEnabledArena(s.getLine(1).substring(2))){
-	                		if(s.getLine(2).equalsIgnoreCase("§2[join]")){
-	                			if(!arenap.containsKey(event.getPlayer().getName())){
-	                				joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));	
-	                			}
-	                		}	
-                		}else{
-                			event.getPlayer().sendMessage("§4This arena is disabled!");
-                		}
-                	}else{
-                		event.getPlayer().sendMessage("§4This arena is set up wrong.");
-                	}
+        			IconMenu iconm = new IconMenu("TheCore Classes", 18, new IconMenu.OptionClickEventHandler() {
+            			@Override
+                        public void onOptionClick(IconMenu.OptionClickEvent event) {
+                            String d = event.getName();
+                            if(aclasses.containsKey(d)){
+								if(event.getPlayer().hasPermission("tc.class." + d)){
+									setClass(d, event.getPlayer().getName());
+									event.getPlayer().sendMessage("§2Class successfully set!");
+								}
+							}
+                            event.setWillClose(true);
+                        }
+                    }, this);
+        			
+        			int count = 0;
+        			for(String class_ : aclasses.keySet()){
+						iconm.setOption(count, new ItemStack(Material.IRON_SWORD, 1), class_, "TheCore " + class_ + " class");
+						count += 1;
+					}
+        			
+                	iconm.open(event.getPlayer());
                 	
-                }else if(s.getLine(0).equalsIgnoreCase("§2[d-class]")){
-                	
-                }
+                	event.setCancelled(true);
+        		}
 	        }
+	    	
+	    	if(event.hasBlock()){
+		    	if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN)
+		        {
+		            final Sign s = (Sign) event.getClickedBlock().getState();
+	
+	                if (s.getLine(0).equalsIgnoreCase("§1[the core]")){
+	                	if(isValidArena(s.getLine(1).substring(2))){
+	                		if(isEnabledArena(s.getLine(1).substring(2))){
+		                		if(s.getLine(2).equalsIgnoreCase("§2[join]")){
+		                			if(!arenap.containsKey(event.getPlayer().getName())){
+		                				joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));	
+		                			}
+		                		}	
+	                		}else{
+	                			event.getPlayer().sendMessage("§4This arena is disabled!");
+	                		}
+	                	}else{
+	                		event.getPlayer().sendMessage("§4This arena is set up wrong.");
+	                	}
+	                }else if(s.getLine(0).equalsIgnoreCase("§2[d-class]")){
+	                	this.giveClassesBook(event.getPlayer().getName());
+	                }
+		        }	
+	    	}
 	    }
 	}
 	
@@ -672,6 +709,7 @@ public class Main extends JavaPlugin implements Listener {
 		}
 		
 		this.setClass("default", player);
+		this.giveClassesBook(player);
 		
 		Sign s = this.getSignFromArena(arena);
 		s.setLine(3, Integer.toString(arenapcount.get(arena)) + "/" + Integer.toString(this.maxplayers_perteam * 2));
@@ -691,6 +729,19 @@ public class Main extends JavaPlugin implements Listener {
 		}else if(!team){
 			// team 2
 			pteam.put(player, 2);
+		}
+	}
+	
+	public void giveClassesBook(String player){
+		ItemStack b = new ItemStack(Material.WRITTEN_BOOK);
+		BookMeta bm = (BookMeta) b.getItemMeta();
+		bm.setAuthor("TheCore");
+		bm.setTitle("Classes");
+		b.setItemMeta(bm);
+		
+		if(isOnline(player)){
+			getServer().getPlayer(player).getInventory().addItem(b);
+			getServer().getPlayer(player).updateInventory();
 		}
 	}
 	
@@ -735,6 +786,8 @@ public class Main extends JavaPlugin implements Listener {
 	
 	public void leaveArena(final String player, String arena){
 		if(isOnline(player)){
+			getServer().getPlayer(player).getInventory().clear();
+			getServer().getPlayer(player).updateInventory();
 			final Location t = getComponentFromArena(arena, "lobby", "1");
 			Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 				@Override
