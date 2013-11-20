@@ -10,8 +10,8 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import net.minecraft.server.v1_6_R3.NBTTagList;
-import net.minecraft.server.v1_6_R3.NBTTagString;
+import net.milkbowl.vault.economy.Economy;
+import net.milkbowl.vault.economy.EconomyResponse;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -23,7 +23,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_6_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -42,7 +41,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
@@ -56,8 +55,11 @@ import org.bukkit.util.io.BukkitObjectOutputStream;
 
 
 
+
 public class Main extends JavaPlugin implements Listener {
 
+	public static Economy econ = null;
+	public boolean economy = true;
 	
 	public static HashMap<String, String> arenap = new HashMap<String, String>(); // player -> arena
 	public static HashMap<String, Integer> arenapcount = new HashMap<String, Integer>(); // arena -> current players in arena
@@ -123,7 +125,27 @@ public class Main extends JavaPlugin implements Listener {
 			Updater updater = new Updater(this, 68563, this.getFile(), Updater.UpdateType.DEFAULT, false);
 		}*/
 		
+		if(getConfig().getBoolean("config.use_economy")){
+			economy = true;
+			if (!setupEconomy()) {
+	            getLogger().severe(String.format("[%s] - No iConomy dependency found! Disabling Economy.", getDescription().getName()));
+	            economy = false;
+	        }
+		}
+		
 	}
+	
+	private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        econ = rsp.getProvider();
+        return econ != null;
+    }
 	
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
     	if(cmd.getName().equalsIgnoreCase("thecore") || cmd.getName().equalsIgnoreCase("tc")){
@@ -910,9 +932,14 @@ public class Main extends JavaPlugin implements Listener {
 					if(getServer().getPlayer(player).isOnline()){
 						getServer().getPlayer(player).sendMessage("§2Congratulations, you won this game!");
 						if(getConfig().getBoolean("config.money_rewards")){
-							//TODO: send money
+							//TODO: send money [try out]
+							EconomyResponse r = econ.depositPlayer(player, getConfig().getDouble("config.money_reward"));
+	            			if(!r.transactionSuccess()) {
+	            				getServer().getPlayer(player).sendMessage(String.format("An error occured: %s", r.errorMessage));
+	                        }
 						}else{
 							//TODO: handle exception if material id is invalid
+							//TODO: [try out]
 							Player p = getServer().getPlayer(player);
 							try{
 								p.getInventory().addItem(new ItemStack(Material.getMaterial(getConfig().getInt("config.item_reward_id")), getConfig().getInt("config.item_reward_amount")));
