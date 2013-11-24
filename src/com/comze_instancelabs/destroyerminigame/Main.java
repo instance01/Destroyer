@@ -24,6 +24,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -36,6 +37,7 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -938,14 +940,12 @@ public class Main extends JavaPlugin implements Listener {
 					if(getServer().getPlayer(player).isOnline()){
 						getServer().getPlayer(player).sendMessage("§2Congratulations, you won this game!");
 						if(getConfig().getBoolean("config.money_rewards")){
-							//TODO: send money [try out]
 							EconomyResponse r = econ.depositPlayer(player, getConfig().getDouble("config.money_reward"));
 	            			if(!r.transactionSuccess()) {
 	            				getServer().getPlayer(player).sendMessage(String.format("An error occured: %s", r.errorMessage));
 	                        }
 						}else{
 							//TODO: handle exception if material id is invalid
-							//TODO: [try out]
 							Player p = getServer().getPlayer(player);
 							try{
 								p.getInventory().addItem(new ItemStack(Material.getMaterial(getConfig().getInt("config.item_reward_id")), getConfig().getInt("config.item_reward_amount")));
@@ -1215,17 +1215,31 @@ public class Main extends JavaPlugin implements Listener {
 							String arena = arenap.get(p1.getName());
 							p2.playSound(p2.getLocation(), Sound.CAT_MEOW, 1F, 1);
 			
-							final Location t = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(p2.getName())));
+							final Location t = this.getComponentFromArena(arena, "lobby", "2");
 							Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 								@Override
 								public void run() {
 									p2.teleport(t);
+									//die(p2.getName());
+									//kill(p1.getName());
+								}
+							}, 5);
+							
+							//TODO respawn timer: try out
+							final Location t_ = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(p2.getName())));
+							Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+								@Override
+								public void run() {
+									p2.teleport(t_);
 									die(p2.getName());
 									kill(p1.getName());
 								}
-							}, 5);
+							}, getConfig().getLong("config.respawn_time_in_seconds") * 20);
+							
+							
 							p1.sendMessage("§2You killed " + p2.getName() + "!");
 							p2.sendMessage("§4You got killed by " + p1.getName() + "!");
+							p2.sendMessage("§2Respawning in 5 seconds . . .");
 							
 							// global message in arena:
 							for(String player : arenap.keySet()){
@@ -1279,6 +1293,35 @@ public class Main extends JavaPlugin implements Listener {
     		}
     	}
     }
+    
+    
+    @EventHandler
+   	public void onPlayerCommandPreprocessEvent(PlayerCommandPreprocessEvent event) {
+       	
+    	if(event.getMessage().equalsIgnoreCase("/leave")){
+    		if(arenap.containsKey(event.getPlayer().getName())){
+    			Player p = event.getPlayer();
+				if(arenap.containsKey(p.getName())){
+					leaveArena(p.getName(), arenap.get(p.getName()));
+				}else{
+					p.sendMessage("§4You're not in an arena right now!");
+				}
+    			event.setCancelled(true);
+    		}
+    	}else if(event.getMessage().equalsIgnoreCase("/stats")){
+    		Player p = event.getPlayer();
+			String name = p.getName();
+			
+			p.sendMessage("§3TheCore statistics: ");
+			p.sendMessage("§3Team Wins: §2" + this.getStatsComponent(name, "teamwin"));
+			p.sendMessage("§3Team Loses: §4" + this.getStatsComponent(name, "teamlose"));
+			p.sendMessage("§3Kills: §2" + this.getStatsComponent(name, "kills"));
+			p.sendMessage("§3Deaths: §4" + this.getStatsComponent(name, "deaths"));
+			event.setCancelled(true);
+    	}
+       	
+    }
+    
     
     public void saveArenaToFile(String player, String arena){
     	File f = new File(this.getDataFolder() + "/" + arena);
