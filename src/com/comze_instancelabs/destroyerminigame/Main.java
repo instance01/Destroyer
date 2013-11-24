@@ -449,6 +449,7 @@ public class Main extends JavaPlugin implements Listener {
 						if(args.length > 1){
 							if(isValidArena(args[1])){
 								getConfig().set("arenas." + args[1] + ".enabled", true);
+								this.getSignFromArena(args[1]).setLine(2, "§2[Join]");
 								this.saveConfig();
 								sender.sendMessage("§2Successfully enabled §3" + args[1]);	
 							}else{
@@ -461,6 +462,7 @@ public class Main extends JavaPlugin implements Listener {
 						if(args.length > 1){
 							if(isValidArena(args[1])){
 								getConfig().set("arenas." + args[1] + ".enabled", false);
+								this.getSignFromArena(args[1]).setLine(2, "§4[Offline]");
 								this.saveConfig();
 								sender.sendMessage("§2Successfully disabled §3" + args[1]);	
 							}else{
@@ -711,7 +713,7 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	
-	public void joinArena(final String player, String arena){
+	public void joinArena(final String player, final String arena){
 		// disable pvp
 		pvpenabled.put(player, false);
 		
@@ -733,8 +735,10 @@ public class Main extends JavaPlugin implements Listener {
 			Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 				@Override
 				public void run() {
-					getServer().getPlayer(player).teleport(t);
-					getServer().getPlayer(player).setGameMode(GameMode.SURVIVAL);
+					Player p = getServer().getPlayer(player);
+					p.teleport(t);
+					p.setGameMode(GameMode.SURVIVAL);
+					p.sendMessage("§3You are playing on map §2" + arena + "§3.");
 				}
 			}, 10);
 		}
