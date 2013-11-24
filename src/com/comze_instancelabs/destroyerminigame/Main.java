@@ -14,6 +14,7 @@ import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -711,7 +712,7 @@ public class Main extends JavaPlugin implements Listener {
 	
 	
 	public void joinArena(final String player, String arena){
-		// disable pvp:
+		// disable pvp
 		pvpenabled.put(player, false);
 		
 		// prepare player
@@ -733,6 +734,7 @@ public class Main extends JavaPlugin implements Listener {
 				@Override
 				public void run() {
 					getServer().getPlayer(player).teleport(t);
+					getServer().getPlayer(player).setGameMode(GameMode.SURVIVAL);
 				}
 			}, 10);
 		}
@@ -982,8 +984,6 @@ public class Main extends JavaPlugin implements Listener {
 		// save in stats if you kill someone
 		int nbef = Integer.parseInt(this.getStatsComponent(player, "kills")) + 1;
 		this.saveStatsComponent(player, "kills", Integer.toString(nbef));
-		
-		getClass(player);
 	}
 	
 	
@@ -1222,6 +1222,15 @@ public class Main extends JavaPlugin implements Listener {
 							}, 5);
 							p1.sendMessage("§2You killed " + p2.getName() + "!");
 							p2.sendMessage("§4You got killed by " + p1.getName() + "!");
+							
+							// global message in arena:
+							for(String player : arenap.keySet()){
+								if(arenap.get(player).equalsIgnoreCase(arena)){
+									if(isOnline(player)){
+										getServer().getPlayer(player).sendMessage("§4" + p2.getName() + "§3 was killed!");
+									}
+								}
+							}
 	    				}
 	    			}
 	    		}else{
