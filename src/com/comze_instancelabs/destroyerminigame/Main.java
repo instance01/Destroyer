@@ -122,6 +122,8 @@ public class Main extends JavaPlugin implements Listener {
 		
 		u = new Utils(this);
 		
+		this.setupEconomy();
+		
 		// extra test class
 		//getConfig().set("classes.pro.name", "pro");
 		//getConfig().set("classes.pro.items", "278#1;17#64;17#64;17#64");
@@ -140,7 +142,6 @@ public class Main extends JavaPlugin implements Listener {
 	            economy = false;
 	        }
 		}
-		
 	}
 	
 	private boolean setupEconomy() {
