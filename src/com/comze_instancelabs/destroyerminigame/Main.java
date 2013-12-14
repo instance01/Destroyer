@@ -55,8 +55,11 @@ import org.bukkit.scoreboard.Team;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 
-
-
+/**
+ * 
+ * @author InstanceLabs
+ *
+ */
 
 
 public class Main extends JavaPlugin implements Listener {
@@ -102,7 +105,9 @@ public class Main extends JavaPlugin implements Listener {
 		getConfig().addDefault("config.auto_updating", true);
 		
 		getConfig().addDefault("config.money_rewards", true);
-		getConfig().addDefault("config.money_reward", 100);
+		//getConfig().addDefault("config.money_reward", 100);
+		getConfig().addDefault("config.money_reward_per_kill", 10);
+		getConfig().addDefault("config.money_reward_per_game", 50);
 		getConfig().addDefault("config.item_reward_id", 264);
 		getConfig().addDefault("config.item_reward_amount", 1);
 		
@@ -451,7 +456,9 @@ public class Main extends JavaPlugin implements Listener {
 						if(args.length > 1){
 							if(isValidArena(args[1])){
 								getConfig().set("arenas." + args[1] + ".enabled", true);
-								this.getSignFromArena(args[1]).setLine(2, "§2[Join]");
+								Sign s = getSignFromArena(args[1]);
+								s.setLine(2, "§2[Join]");
+								s.update();
 								this.saveConfig();
 								sender.sendMessage("§2Successfully enabled §3" + args[1]);	
 							}else{
@@ -464,7 +471,9 @@ public class Main extends JavaPlugin implements Listener {
 						if(args.length > 1){
 							if(isValidArena(args[1])){
 								getConfig().set("arenas." + args[1] + ".enabled", false);
-								this.getSignFromArena(args[1]).setLine(2, "§4[Offline]");
+								Sign s = getSignFromArena(args[1]);
+								s.setLine(2, "§4[Offline]");
+								s.update();
 								this.saveConfig();
 								sender.sendMessage("§2Successfully disabled §3" + args[1]);	
 							}else{
@@ -940,7 +949,7 @@ public class Main extends JavaPlugin implements Listener {
 					if(getServer().getPlayer(player).isOnline()){
 						getServer().getPlayer(player).sendMessage("§2Congratulations, you won this game!");
 						if(getConfig().getBoolean("config.money_rewards")){
-							EconomyResponse r = econ.depositPlayer(player, getConfig().getDouble("config.money_reward"));
+							EconomyResponse r = econ.depositPlayer(player, getConfig().getDouble("config.money_reward_per_game"));
 	            			if(!r.transactionSuccess()) {
 	            				getServer().getPlayer(player).sendMessage(String.format("An error occured: %s", r.errorMessage));
 	                        }
@@ -988,6 +997,13 @@ public class Main extends JavaPlugin implements Listener {
 		// save in stats if you kill someone
 		int nbef = Integer.parseInt(this.getStatsComponent(player, "kills")) + 1;
 		this.saveStatsComponent(player, "kills", Integer.toString(nbef));
+		
+		if(getConfig().getBoolean("config.money_rewards")){
+			EconomyResponse r = econ.depositPlayer(player, getConfig().getDouble("config.money_reward_per_kill"));
+			if(!r.transactionSuccess()) {
+				getServer().getPlayer(player).sendMessage(String.format("An error occured: %s", r.errorMessage));
+            }
+		}
 	}
 	
 	
@@ -1183,10 +1199,16 @@ public class Main extends JavaPlugin implements Listener {
 		if(arenap.containsKey(event.getPlayer().getName())){
 			Player p = event.getPlayer();
 			Cuboid c = new Cuboid(this.getComponentFromArena(arenap.get(p.getName()), "boundary", "1"), this.getComponentFromArena(arenap.get(p.getName()), "boundary", "2"));
-	    	if(!c.containsLoc(event.getTo())){
-	    		// player is out of the arena
-	    		// TODO: arena boundaries
+	    	
+			// if y is still over lower level
+			if(event.getTo().getBlockY() > c.getLowLoc().getBlockY()){
+				// still not in arena?
+		    	if(!c.containsLoc(event.getTo())){
+		    		// player is out of the arena
+		    		//TODO: arena boundaries
+		    	}	
 	    	}
+			
 		}
 	}
 	
