@@ -939,7 +939,6 @@ public class Main extends JavaPlugin implements Listener {
 		}
 		
 		resetArena(arena);
-		getLogger().info("TEST3" + arena);
 	}
 	
 	public void teamWin(String arena, int team){
