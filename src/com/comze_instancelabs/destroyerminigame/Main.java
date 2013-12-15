@@ -250,7 +250,7 @@ public class Main extends JavaPlugin implements Listener {
 	    						b.setType(Material.BEACON);
 	    						Field field = null;
 								try {
-									field = net.minecraft.server.v1_6_R3.Block.class.getDeclaredField("strength");
+									field = net.minecraft.server.v1_7_R1.Block.class.getDeclaredField("strength");
 								} catch (NoSuchFieldException e1) {
 									getLogger().severe("This version doesn't support your craftbukkit version!");
 								} catch (SecurityException e){
@@ -338,7 +338,7 @@ public class Main extends JavaPlugin implements Listener {
     							if(isEnabledArena(arena)){
 	    							if(!arenap.containsKey(p.getName())){
 	                    				joinArena(p.getName(), arena);	
-	                    			}	
+	                    			}
     							}else{
     								sender.sendMessage("§4This arena is disabled!");
     							}
@@ -939,6 +939,7 @@ public class Main extends JavaPlugin implements Listener {
 		}
 		
 		resetArena(arena);
+		getLogger().info("TEST3" + arena);
 	}
 	
 	public void teamWin(String arena, int team){
@@ -968,7 +969,7 @@ public class Main extends JavaPlugin implements Listener {
 				}
 			}
 		}
-		resetArena(arena);
+		//resetArena(arena);
 	}
 	
 	public void teamLose(String arena, int team){
@@ -983,7 +984,9 @@ public class Main extends JavaPlugin implements Listener {
 				}
 			}
 		}
-		resetArena(arena);
+		// TODO: check that
+		// arena already gets reset at teamWin function
+		//resetArena(arena);
 	}
 	
 	public void die(String player){
