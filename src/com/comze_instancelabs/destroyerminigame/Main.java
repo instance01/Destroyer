@@ -10,7 +10,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -26,7 +25,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -40,12 +38,12 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -72,6 +70,7 @@ public class Main extends JavaPlugin implements Listener {
 	
 	public static HashMap<String, String> arenap = new HashMap<String, String>(); // player -> arena
 	public static HashMap<String, Integer> arenapcount = new HashMap<String, Integer>(); // arena -> current players in arena
+	@Deprecated
 	public static HashMap<String, String> arena_state = new HashMap<String, String>(); // arena -> [join], [ingame], [restarting]
 	public static HashMap<String, Integer> pteam = new HashMap<String, Integer>(); // player -> team integer
 	public static HashMap<String, Boolean> current_team_selection = new HashMap<String, Boolean>();
@@ -993,7 +992,7 @@ public class Main extends JavaPlugin implements Listener {
 				}
 			}
 		}
-		//resetArena(arena);
+		resetArena(arena);
 	}
 	
 	public void teamLose(String arena, int team){
@@ -1345,6 +1344,16 @@ public class Main extends JavaPlugin implements Listener {
     		if(arenap.containsKey(p.getName())){
     			event.setCancelled(true);
     		}
+    	}
+    }
+    
+    @EventHandler
+    public void onPlayerDropItem(PlayerDropItemEvent event){
+    	if(arenap.containsKey(event.getPlayer().getName())){
+    		// pvp is only disabled in the lobby, means i can use that for denying item drops, too
+    		if(!pvpenabled.get(event.getPlayer().getName())){
+				event.setCancelled(true);
+			}
     	}
     }
     
