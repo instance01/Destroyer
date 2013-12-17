@@ -762,8 +762,16 @@ public class Main extends JavaPlugin implements Listener {
 			p.updateInventory();
 		}
 		
-		//TODO:remove this
+		for(String p_ : arenap.keySet()){
+			if(arenap.get(p_).equalsIgnoreCase(arena)){
+				if(isOnline(p_)){
+					getServer().getPlayer(p_).sendMessage("§6" + player + "§2 joined the game.");
+				}
+			}
+		}
+		
 		this.setClass("default", player);
+		//TODO: remove try catch
 		try{
 			this.giveClassesBook(player);
 		}catch(Exception e){
@@ -796,7 +804,7 @@ public class Main extends JavaPlugin implements Listener {
 	
 	public void giveClassesBook(String player){
 		ItemStack b = new ItemStack(Material.ENCHANTED_BOOK);
-		//BookMeta bm = (BookMeta) b.getItemMeta();+
+		//BookMeta bm = (BookMeta) b.getItemMeta();
 		EnchantmentStorageMeta bm = (EnchantmentStorageMeta)b.getItemMeta();
 		bm.setDisplayName("TheCore");
 		bm.setLore(Arrays.asList("Classes"));
@@ -858,14 +866,20 @@ public class Main extends JavaPlugin implements Listener {
 				@Override
 				public void run() {
 					getServer().getPlayer(player).teleport(t);
+					
+					Player p = getServer().getPlayer(player);
+					p.getInventory().clear();
+					p.updateInventory();
+					p.getInventory().setContents(pinv.get(p.getName()));
+					p.updateInventory();
 				}
 			}, 10);
 			
-			Player p = getServer().getPlayer(player);
+			/*Player p = getServer().getPlayer(player);
 			p.getInventory().clear();
 			p.updateInventory();
 			p.getInventory().setContents(pinv.get(p.getName()));
-			p.updateInventory();
+			p.updateInventory();*/
 		}
 		
 		arenap.remove(player);
