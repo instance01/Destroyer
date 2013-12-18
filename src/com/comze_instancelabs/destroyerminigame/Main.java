@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -44,6 +45,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -113,8 +115,13 @@ public class Main extends JavaPlugin implements Listener {
 		getConfig().addDefault("config.item_reward_id", 264);
 		getConfig().addDefault("config.item_reward_amount", 1);
 		
+		getConfig().addDefault("config.remove_default_class_from_optionswindow", true);
+		getConfig().addDefault("config.lobby_help_book", "'The purpose of the game is to destroy the others beacon. You can select a class by rightclicking the enchanted book in your inventory.'");
+		
 		getConfig().addDefault("classes.default.name", "default");
 		getConfig().addDefault("classes.default.items", "267#1;3#64;3#64");
+		getConfig().addDefault("classes.default.itemid", "267");
+		getConfig().addDefault("classes.default.lore", "The default class.");
 		
 		getConfig().options().copyDefaults(true);
 		this.saveDefaultConfig();
@@ -543,7 +550,24 @@ public class Main extends JavaPlugin implements Listener {
         			
         			int count = 0;
         			for(String class_ : aclasses.keySet()){
-						iconm.setOption(count, new ItemStack(Material.IRON_SWORD, 1), class_, "TheCore " + class_ + " class");
+        				if(getConfig().getBoolean("config.remove_default_class_from_optionswindow")){        					//TODO: try it
+
+    						if(!class_.equalsIgnoreCase("default")){
+	        					int id = getConfig().getInt("classes." + class_ + ".itemid");
+	        					ItemStack i_ = null;
+	        					if(Material.getMaterial(id) != null && id != 0){
+	        						i_ = new ItemStack(Material.getMaterial(id), 1);
+	        					}else{
+	        						i_ = new ItemStack(Material.IRON_SWORD, 1);
+	        					}
+	        					String lore = getConfig().getString("classes." + class_ + ".lore");
+	    						iconm.setOption(count, i_, class_, lore);
+	        				}
+	        				
+        				}else{
+    						iconm.setOption(count, new ItemStack(Material.IRON_SWORD, 1), class_, "TheCore " + class_ + " class");
+        				}
+        				
 						count += 1;
 					}
         			
@@ -803,17 +827,31 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	public void giveClassesBook(String player){
+		// adds the class selection book
 		ItemStack b = new ItemStack(Material.ENCHANTED_BOOK);
-		//BookMeta bm = (BookMeta) b.getItemMeta();
 		EnchantmentStorageMeta bm = (EnchantmentStorageMeta)b.getItemMeta();
 		bm.setDisplayName("TheCore");
 		bm.setLore(Arrays.asList("Classes"));
-		//bm.setAuthor("TheCore");
-		//bm.setTitle("Classes");
 		b.setItemMeta(bm);
+		
+		// adds the help book
+		String text = getConfig().getString("config.lobby_help_book");
+		List<String> texts = new ArrayList<String>();
+		int index = 0;
+		while (index<text.length()) {
+			texts.add(text.substring(index, Math.min(index+228,text.length())));
+		    index+=228;
+		}
+		ItemStack b_ = new ItemStack(Material.WRITTEN_BOOK);
+		BookMeta b_m = (BookMeta) b_.getItemMeta();
+		b_m.setAuthor("TheCore");
+		b_m.setTitle("Help");
+		b_m.setPages(texts);
+		b_.setItemMeta(b_m);
 		
 		if(isOnline(player)){
 			getServer().getPlayer(player).getInventory().addItem(b);
+			getServer().getPlayer(player).getInventory().addItem(b_);
 			getServer().getPlayer(player).updateInventory();
 		}
 	}
@@ -1162,6 +1200,9 @@ public class Main extends JavaPlugin implements Listener {
 			for(String aclass : getConfig().getConfigurationSection("classes.").getKeys(false)){
 				AClass n = new AClass(this, aclass, parseItems(getConfig().getString("classes." + aclass + ".items")));
 				aclasses.put(aclass, n);
+				if(!getConfig().isSet("classes." + aclass + ".itemid") || !getConfig().isSet("classes." + aclass + ".lore")){
+					getLogger().warning("One of the classes found in the config file is invalid: " + aclass + ". Missing itemid or lore!");
+				}
 			}
 		}
 	}
