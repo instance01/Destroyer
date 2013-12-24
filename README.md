@@ -22,7 +22,7 @@ All features:
 
 
 
-The setup is pretty big though..
+Setup:
 
 
 
@@ -40,5 +40,6 @@ IMPORTANT: after you built the arena map:
 
 
 
+The project is currently in release stage, but went private now (thus the link below doesn't work).
 
 (BukkitDev project page: [Destroyer](http:/dev.bukkit.org/bukkit-plugins/destroyer/))
