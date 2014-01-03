@@ -1425,6 +1425,7 @@ public class Main extends JavaPlugin implements Listener {
 					p.sendMessage("§4You're not in an arena right now!");
 				}
     			event.setCancelled(true);
+    			return;
     		}
     	}else if(event.getMessage().equalsIgnoreCase("/stats")){
     		Player p = event.getPlayer();
@@ -1436,6 +1437,12 @@ public class Main extends JavaPlugin implements Listener {
 			p.sendMessage("§3Kills: §2" + this.getStatsComponent(name, "kills"));
 			p.sendMessage("§3Deaths: §4" + this.getStatsComponent(name, "deaths"));
 			event.setCancelled(true);
+			return;
+    	}
+    	
+    	if(arenap.containsKey(event.getPlayer().getName())){
+    		event.getPlayer().sendMessage("§cYou can't use commands while ingame!");
+    		event.setCancelled(true);
     	}
        	
     }
