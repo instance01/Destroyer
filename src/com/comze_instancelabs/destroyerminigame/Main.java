@@ -64,7 +64,6 @@ import org.bukkit.util.io.BukkitObjectOutputStream;
  *
  */
 
-
 public class Main extends JavaPlugin implements Listener {
 
 	public static Economy econ = null;
@@ -91,12 +90,12 @@ public class Main extends JavaPlugin implements Listener {
 	
 	/*
 	 * Setup:
-	 * dest createarena [name]
-	 * dest setboundaries {count} [name]
-	 * dest setspawn {count} [name]
-	 * dest setlobby {count} [name]
-	 * dest setbeacon {count} [name]
-	 * dest save [name]
+	 * tc createarena [name]
+	 * tc setboundaries {count} [name]
+	 * tc setspawn {count} [name]
+	 * tc setlobby {count} [name]
+	 * tc setbeacon {count} [name]
+	 * tc save [name]
 	 * 
 	 */
 	
