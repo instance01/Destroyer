@@ -1438,6 +1438,8 @@ public class Main extends JavaPlugin implements Listener {
 			p.sendMessage("§3Deaths: §4" + this.getStatsComponent(name, "deaths"));
 			event.setCancelled(true);
 			return;
+    	} else if(event.getMessage().contains("/tc")){
+    		return;
     	}
     	
     	if(arenap.containsKey(event.getPlayer().getName())){
