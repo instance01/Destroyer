@@ -584,7 +584,7 @@ public class Main extends JavaPlugin implements Listener {
 	                if (s.getLine(0).equalsIgnoreCase("§1[the core]")){
 	                	if(isValidArena(s.getLine(1).substring(2))){
 	                		if(isEnabledArena(s.getLine(1).substring(2))){
-		                		if(s.getLine(2).equalsIgnoreCase("§2[join]")){
+		                		if(s.getLine(2).equalsIgnoreCase("§2[Join]")){
 		                			if(!arenap.containsKey(event.getPlayer().getName())){
 		                				joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));	
 		                			}
@@ -626,7 +626,7 @@ public class Main extends JavaPlugin implements Listener {
 	        			event.getBlock().breakNaturally();
 	        		}
 	        		event.setLine(1, "§5" +  arena);
-	        		event.setLine(2, "§2[join]");
+	        		event.setLine(2, "§2[Join]");
 	        		event.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 	        	}
         	}
@@ -857,7 +857,7 @@ public class Main extends JavaPlugin implements Listener {
 	
 	public void startArena(final String arena){
 		Sign s = this.getSignFromArena(arena);
-		s.setLine(2, "§4[Ingame]");
+		s.setLine(2, "§8[InGame]");
 		s.setLine(3, Integer.toString(arenapcount.get(arena)) + "/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
 		
@@ -989,7 +989,7 @@ public class Main extends JavaPlugin implements Listener {
 		
 	    
 		Sign s = this.getSignFromArena(arena);
-		s.setLine(2, "§6[Restarting]");
+		s.setLine(2, "§L§4[Restarting]");
 		s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
 		
@@ -1023,7 +1023,7 @@ public class Main extends JavaPlugin implements Listener {
 					int nbef = Integer.parseInt(this.getStatsComponent(player, "teamwin")) + 1;
 					this.saveStatsComponent(player, "teamwin", Integer.toString(nbef));
 					if(getServer().getPlayer(player).isOnline()){
-						getServer().getPlayer(player).sendMessage("§2Congratulations, you won this game!");
+						getServer().getPlayer(player).sendMessage("§ECongratulations, you have won this game!");
 						if(getConfig().getBoolean("config.money_rewards")){
 							EconomyResponse r = econ.depositPlayer(player, getConfig().getDouble("config.money_reward_per_game"));
 	            			if(!r.transactionSuccess()) {
@@ -1053,7 +1053,7 @@ public class Main extends JavaPlugin implements Listener {
 					int nbef = Integer.parseInt(this.getStatsComponent(player, "teamlose")) + 1;
 					this.saveStatsComponent(player, "teamlose", Integer.toString(nbef));
 					if(getServer().getPlayer(player).isOnline()){
-						getServer().getPlayer(player).sendMessage("§2You lost this game!");
+						getServer().getPlayer(player).sendMessage("§4Your Team has Lost!");
 					}
 				}
 			}
@@ -1344,15 +1344,15 @@ public class Main extends JavaPlugin implements Listener {
 							}, getConfig().getLong("config.respawn_time_in_seconds") * 20);
 							
 							
-							p1.sendMessage("§2You killed " + p2.getName() + "!");
-							p2.sendMessage("§4You got killed by " + p1.getName() + "!");
+							p1.sendMessage("§2You have slain " + p2.getName() + "!");
+							p2.sendMessage("§4You were slain by " + p1.getName() + "!");
 							p2.sendMessage("§2Respawning in 5 seconds . . .");
 							
 							// global message in arena:
 							for(String player : arenap.keySet()){
 								if(arenap.get(player).equalsIgnoreCase(arena)){
 									if(isOnline(player)){
-										getServer().getPlayer(player).sendMessage("§4" + p2.getName() + "§3 was killed!");
+										getServer().getPlayer(player).sendMessage("§6" + p2.getName() + "§0 was Slain!");
 									}
 								}
 							}
@@ -1430,11 +1430,13 @@ public class Main extends JavaPlugin implements Listener {
     		Player p = event.getPlayer();
 			String name = p.getName();
 			
-			p.sendMessage("§3TheCore statistics: ");
-			p.sendMessage("§3Team Wins: §2" + this.getStatsComponent(name, "teamwin"));
-			p.sendMessage("§3Team Loses: §4" + this.getStatsComponent(name, "teamlose"));
-			p.sendMessage("§3Kills: §2" + this.getStatsComponent(name, "kills"));
-			p.sendMessage("§3Deaths: §4" + this.getStatsComponent(name, "deaths"));
+			p.sendMessage("§0-------------------------");
+			p.sendMessage("§N§ETheCore Statistics: ");
+			p.sendMessage("§FTeam Wins: §2" + this.getStatsComponent(name, "teamwin"));
+			p.sendMessage("§FTeam Loses: §4" + this.getStatsComponent(name, "teamlose"));
+			p.sendMessage("§FKills: §2" + this.getStatsComponent(name, "kills"));
+			p.sendMessage("§FDeaths: §4" + this.getStatsComponent(name, "deaths"));
+			p.sendMessage("§0-------------------------");
 			event.setCancelled(true);
 			return;
     	} else if(event.getMessage().contains("/tc")){
@@ -1442,7 +1444,7 @@ public class Main extends JavaPlugin implements Listener {
     	}
     	
     	if(arenap.containsKey(event.getPlayer().getName())){
-    		event.getPlayer().sendMessage("§cYou can't use commands while ingame!");
+    		event.getPlayer().sendMessage("§cCommands are Blocked In-Game. To leave do " + "§e/tc leave");
     		event.setCancelled(true);
     	}
        	
