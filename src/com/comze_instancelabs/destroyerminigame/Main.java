@@ -584,7 +584,7 @@ public class Main extends JavaPlugin implements Listener {
 	                if (s.getLine(0).equalsIgnoreCase("§1[the core]")){
 	                	if(isValidArena(s.getLine(1).substring(2))){
 	                		if(isEnabledArena(s.getLine(1).substring(2))){
-		                		if(s.getLine(2).equalsIgnoreCase("§2[Join]")){
+		                		if(s.getLine(2).equalsIgnoreCase("§2[join]")){
 		                			if(!arenap.containsKey(event.getPlayer().getName())){
 		                				joinArena(event.getPlayer().getName(), s.getLine(1).substring(2));	
 		                			}
