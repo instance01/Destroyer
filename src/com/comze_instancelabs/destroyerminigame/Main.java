@@ -102,15 +102,15 @@ public class Main extends JavaPlugin implements Listener {
 	public void onEnable(){
 		getServer().getPluginManager().registerEvents(this, this);
 		
-		getConfig().addDefault("config.maxplayers_per_team", 10);
-		getConfig().addDefault("config.minutes_per_game", 15);
+		getConfig().addDefault("config.maxplayers_per_team", 6);
+		getConfig().addDefault("config.minutes_per_game", 20);
 		getConfig().addDefault("config.respawn_time_in_seconds", 5);
-		getConfig().addDefault("config.auto_updating", true);
+		getConfig().addDefault("config.auto_updating", false);
 		
 		getConfig().addDefault("config.money_rewards", true);
 		//getConfig().addDefault("config.money_reward", 100);
-		getConfig().addDefault("config.money_reward_per_kill", 10);
-		getConfig().addDefault("config.money_reward_per_game", 50);
+		getConfig().addDefault("config.money_reward_per_kill", 5);
+		getConfig().addDefault("config.money_reward_per_game", 30);
 		getConfig().addDefault("config.item_reward_id", 264);
 		getConfig().addDefault("config.item_reward_amount", 1);
 		
@@ -118,7 +118,7 @@ public class Main extends JavaPlugin implements Listener {
 		getConfig().addDefault("config.lobby_help_book", "'The purpose of the game is to destroy the others beacon. You can select a class by rightclicking the enchanted book in your inventory.'");
 		
 		getConfig().addDefault("classes.default.name", "default");
-		getConfig().addDefault("classes.default.items", "267#1;3#64;3#64");
+		getConfig().addDefault("classes.default.items", "268#1");
 		getConfig().addDefault("classes.default.itemid", "267");
 		getConfig().addDefault("classes.default.lore", "The default class.");
 		
@@ -540,7 +540,7 @@ public class Main extends JavaPlugin implements Listener {
                             if(aclasses.containsKey(d)){
 								if(event.getPlayer().hasPermission("tc.class." + d)){
 									setClass(d, event.getPlayer().getName());
-									event.getPlayer().sendMessage("§2Class successfully set!");
+									event.getPlayer().sendMessage("§e[The Core] " + "§2Class Successfully Chosen!");
 								}
 							}
                             event.setWillClose(true);
@@ -590,7 +590,7 @@ public class Main extends JavaPlugin implements Listener {
 		                			}
 		                		}	
 	                		}else{
-	                			event.getPlayer().sendMessage("§4This arena is disabled!");
+	                			event.getPlayer().sendMessage("§e[The Core] " + "§fThis Arena is " + "§cOffline");
 	                		}
 	                	}else{
 	                		event.getPlayer().sendMessage("§4This arena is set up wrong.");
@@ -775,7 +775,7 @@ public class Main extends JavaPlugin implements Listener {
 					Player p = getServer().getPlayer(player);
 					p.teleport(t);
 					p.setGameMode(GameMode.SURVIVAL);
-					p.sendMessage("§3You are playing on map §2" + arena + "§3.");
+					p.sendMessage("§e[The Core] " + "§fYou are playing on map §2" + arena + "§f.");
 				}
 			}, 10);
 			
@@ -784,11 +784,11 @@ public class Main extends JavaPlugin implements Listener {
 			p.getInventory().clear();
 			p.updateInventory();
 		}
-		
+		// Does not work
 		for(String p_ : arenap.keySet()){
 			if(arenap.get(p_).equalsIgnoreCase(arena)){
 				if(isOnline(p_)){
-					getServer().getPlayer(p_).sendMessage("§6" + player + "§2 joined the game.");
+					getServer().getPlayer(p_).sendMessage("§e[The Core] " + "§2" + player + "§f joined the game.");
 				}
 			}
 		}
@@ -864,7 +864,7 @@ public class Main extends JavaPlugin implements Listener {
 		for(final String player : arenap.keySet()){
 			if(arenap.get(player).equalsIgnoreCase(arena)){
 				if(isOnline(player)){
-					getServer().getPlayer(player).sendMessage("§3The game has started!");
+					getServer().getPlayer(player).sendMessage("§e[The Core] " + "§fThe Game has Started!");
 					
 					// enable pvp again
 					pvpenabled.put(player, true);
@@ -969,7 +969,7 @@ public class Main extends JavaPlugin implements Listener {
 					getServer().getPlayer(player).getInventory().clear();
 					getServer().getPlayer(player).updateInventory();
 					
-					getServer().getPlayer(player).sendMessage("§4The game has ended!");
+					getServer().getPlayer(player).sendMessage("§e[The Core] " + "§cThe game has Ended!");
 				}
 			}
 		}
@@ -1008,7 +1008,7 @@ public class Main extends JavaPlugin implements Listener {
 		for(final String player : arenap.keySet()){
 			if(arenap.get(player).equalsIgnoreCase(arena)){
 				if(isOnline(player)){
-					getServer().getPlayer(player).sendMessage("§4It's a draw, noone wins!");
+					getServer().getPlayer(player).sendMessage("§e[The Core] " + "§4It's a Draw, noone has won!");
 				}
 			}
 		}
@@ -1023,7 +1023,7 @@ public class Main extends JavaPlugin implements Listener {
 					int nbef = Integer.parseInt(this.getStatsComponent(player, "teamwin")) + 1;
 					this.saveStatsComponent(player, "teamwin", Integer.toString(nbef));
 					if(getServer().getPlayer(player).isOnline()){
-						getServer().getPlayer(player).sendMessage("§ECongratulations, you have won this game!");
+						getServer().getPlayer(player).sendMessage("§e[The Core] " + "§eCongratulations, you have won this game!");
 						if(getConfig().getBoolean("config.money_rewards")){
 							EconomyResponse r = econ.depositPlayer(player, getConfig().getDouble("config.money_reward_per_game"));
 	            			if(!r.transactionSuccess()) {
@@ -1053,7 +1053,7 @@ public class Main extends JavaPlugin implements Listener {
 					int nbef = Integer.parseInt(this.getStatsComponent(player, "teamlose")) + 1;
 					this.saveStatsComponent(player, "teamlose", Integer.toString(nbef));
 					if(getServer().getPlayer(player).isOnline()){
-						getServer().getPlayer(player).sendMessage("§4Your Team has Lost!");
+						getServer().getPlayer(player).sendMessage("§e[The Core] " + "§4Your Team has Lost!");
 					}
 				}
 			}
@@ -1155,7 +1155,7 @@ public class Main extends JavaPlugin implements Listener {
 		
 		Objective objective = board.registerNewObjective(arena, "dummy");
 		objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-		objective.setDisplayName("§3TheCore");
+		objective.setDisplayName("§6TheCore");
 		
 		
 		Score score = objective.getScore(Bukkit.getOfflinePlayer("§aTime left: "));
@@ -1444,7 +1444,7 @@ public class Main extends JavaPlugin implements Listener {
     	}
     	
     	if(arenap.containsKey(event.getPlayer().getName())){
-    		event.getPlayer().sendMessage("§cCommands are Blocked In-Game. To leave do " + "§e/tc leave");
+    		event.getPlayer().sendMessage("§e[The Core] " + "§cCommands are Blocked In-Game. To leave do " + "§e/tc leave");
     		event.setCancelled(true);
     	}
        	
