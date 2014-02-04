@@ -85,6 +85,7 @@ public class Main extends JavaPlugin implements Listener {
 	public static HashMap<String, ItemStack[]> pinv = new HashMap<String, ItemStack[]>(); // player -> inventory
 	
 	Utils u = null;
+	StatsConfig statsConfig = null;
 	
 	public int maxplayers_perteam = 0;
 	
@@ -125,6 +126,9 @@ public class Main extends JavaPlugin implements Listener {
 		getConfig().options().copyDefaults(true);
 		this.saveDefaultConfig();
 		this.saveConfig();
+		
+		statsConfig = new StatsConfig(this);
+		statsConfig.reloadConfig();
 		
 		maxplayers_perteam = getConfig().getInt("config.maxplayers_per_team");
 		
@@ -688,13 +692,20 @@ public class Main extends JavaPlugin implements Listener {
 	}
 	
 	public void saveStatsComponent(String player, String component, String value){
-		getConfig().set("stats." + player + "." + component, value);
-		this.saveConfig();
+		statsConfig.getConfig().set("stats." + player + "." + component, value);
+		statsConfig.saveConfig();
+		//getConfig().set("stats." + player + "." + component, value);
+		//this.saveConfig();
 	}
 	
 	public String getStatsComponent(String player, String component){
-		if(getConfig().isSet("stats." + player + "." + component)){
+		/*if(getConfig().isSet("stats." + player + "." + component)){
 			return getConfig().getString("stats." + player + "." + component);
+		}else{
+			return "0";
+		}*/
+		if(statsConfig.getConfig().isSet("stats." + player + "." + component)){
+			return statsConfig.getConfig().getString("stats." + player + "." + component);
 		}else{
 			return "0";
 		}
