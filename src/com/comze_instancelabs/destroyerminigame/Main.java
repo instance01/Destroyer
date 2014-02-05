@@ -363,7 +363,7 @@ public class Main extends JavaPlugin implements Listener {
 	                    				joinArena(p.getName(), arena);	
 	                    			}
     							}else{
-    								sender.sendMessage("§4This arena is disabled!");
+    								sender.sendMessage("§4This Server is Offline! Please Join another One.");
     							}
                         	}else{
                         		p.sendMessage("§4This arena is set up wrong.");
@@ -412,11 +412,13 @@ public class Main extends JavaPlugin implements Listener {
     					Player p = (Player)sender;
     					String name = p.getName();
     					
-    					p.sendMessage("§3TheCore statistics: ");
-    					p.sendMessage("§3Team Wins: §2" + this.getStatsComponent(name, "teamwin"));
-    					p.sendMessage("§3Team Loses: §4" + this.getStatsComponent(name, "teamlose"));
-    					p.sendMessage("§3Kills: §2" + this.getStatsComponent(name, "kills"));
-    					p.sendMessage("§3Deaths: §4" + this.getStatsComponent(name, "deaths"));
+    					p.sendMessage("§f------------------------");
+    					p.sendMessage("§n§eThe Core Statistics: ");
+    					p.sendMessage("§0Game Wins: §2" + this.getStatsComponent(name, "teamwin"));
+    					p.sendMessage("§0Game Loses: §c" + this.getStatsComponent(name, "teamlose"));
+    					p.sendMessage("§0Kills: §2" + this.getStatsComponent(name, "kills"));
+    					p.sendMessage("§0Deaths: §c" + this.getStatsComponent(name, "deaths"));
+    					p.sendMessage("§f------------------------");
     				}else if(action.equalsIgnoreCase("help")){
     					// /tc help
     					this.sendHelp(sender);
@@ -484,7 +486,7 @@ public class Main extends JavaPlugin implements Listener {
 								s.setLine(2, "§2[Join]");
 								s.update();
 								this.saveConfig();
-								sender.sendMessage("§2Successfully enabled §3" + args[1]);	
+								sender.sendMessage("§2Successfully Enabled §3" + args[1]);	
 							}else{
 								sender.sendMessage("§4Arena could not be found or is missing components.");
 							}
@@ -499,7 +501,7 @@ public class Main extends JavaPlugin implements Listener {
 								s.setLine(2, "§4[Offline]");
 								s.update();
 								this.saveConfig();
-								sender.sendMessage("§2Successfully disabled §3" + args[1]);	
+								sender.sendMessage("§2Successfully Disabled §3" + args[1]);	
 							}else{
 								sender.sendMessage("§4Arena could not be found or is missing components.");
 							}
@@ -548,14 +550,14 @@ public class Main extends JavaPlugin implements Listener {
 	    	if(event.getPlayer().getItemInHand().getTypeId() == new ItemStack(Material.ENCHANTED_BOOK).getTypeId()){
         		if(arenap.containsKey(event.getPlayer().getName())){
 
-        			IconMenu iconm = new IconMenu("TheCore Classes", 18, new IconMenu.OptionClickEventHandler() {
+        			IconMenu iconm = new IconMenu("The Core Classes", 18, new IconMenu.OptionClickEventHandler() {
             			@Override
                         public void onOptionClick(IconMenu.OptionClickEvent event) {
                             String d = event.getName();
                             if(aclasses.containsKey(d)){
 								if(event.getPlayer().hasPermission("tc.class." + d)){
 									setClass(d, event.getPlayer().getName());
-									event.getPlayer().sendMessage("§e[The Core] " + "§2Class Successfully Chosen!");
+									event.getPlayer().sendMessage("§e[The Core] " + "§2Class Successfully Selected!");
 								}
 							}
                             event.setWillClose(true);
