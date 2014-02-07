@@ -657,7 +657,7 @@ public class Main extends JavaPlugin implements Listener {
 	
 	public boolean isEnabledArena(String arena){
 		if(isValidArena(arena)){
-			if(getConfig().getBoolean("arenas." + arena + ".enabled")){
+			if(arenaConfig.getConfig().getBoolean("arenas." + arena + ".enabled")){
 				return true;
 			}
 		}
