@@ -994,7 +994,7 @@ public class Main extends JavaPlugin implements Listener {
 					getServer().getPlayer(player).getInventory().clear();
 					getServer().getPlayer(player).updateInventory();
 					
-					getServer().getPlayer(player).sendMessage("§e[The Core] " + "§cThe game has Ended!");
+					getServer().getPlayer(player).sendMessage("§e[The Core] " + "§fThe game has Ended!");
 				}
 			}
 		}
@@ -1014,7 +1014,7 @@ public class Main extends JavaPlugin implements Listener {
 		
 	    
 		Sign s = this.getSignFromArena(arena);
-		s.setLine(2, "§L§4[Restarting]");
+		s.setLine(2, "§4Restarting");
 		s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
 		
@@ -1371,13 +1371,13 @@ public class Main extends JavaPlugin implements Listener {
 							
 							p1.sendMessage("§2You have slain " + p2.getName() + "!");
 							p2.sendMessage("§4You were slain by " + p1.getName() + "!");
-							p2.sendMessage("§2Respawning in 5 seconds . . .");
+							p2.sendMessage("§fRespawning in 5 seconds . . .");
 							
 							// global message in arena:
 							for(String player : arenap.keySet()){
 								if(arenap.get(player).equalsIgnoreCase(arena)){
 									if(isOnline(player)){
-										getServer().getPlayer(player).sendMessage("§6" + p2.getName() + "§0 was Slain!");
+										getServer().getPlayer(player).sendMessage("§6" + p2.getName() + "§f was Slain!");
 									}
 								}
 							}
@@ -1469,7 +1469,7 @@ public class Main extends JavaPlugin implements Listener {
     	}
     	
     	if(arenap.containsKey(event.getPlayer().getName())){
-    		event.getPlayer().sendMessage("§e[The Core] " + "§cCommands are Blocked In-Game. To leave do " + "§e/tc leave");
+    		event.getPlayer().sendMessage("§e[The Core] " + "§cCommands are Blocked In-Game. To leave do " + "      §e/tc leave");
     		event.setCancelled(true);
     	}
        	
