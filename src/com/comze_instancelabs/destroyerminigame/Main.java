@@ -1345,7 +1345,7 @@ public class Main extends JavaPlugin implements Listener {
 	    				if(arenap.containsKey(p1.getName())){
 		    				event.getEntity().setHealth(20);
 							String arena = arenap.get(p1.getName());
-							p2.playSound(p2.getLocation(), Sound.CAT_MEOW, 1F, 1);
+							p2.playSound(p2.getLocation(), Sound.CREEPER_DEATH, 1F, 1);
 			
 							final Location t = this.getComponentFromArena(arena, "lobby", "2");
 							Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
@@ -1386,7 +1386,7 @@ public class Main extends JavaPlugin implements Listener {
 	    		}else{
 	    			event.getEntity().setHealth(20);
 					String arena = arenap.get(p2.getName());
-					p2.playSound(p2.getLocation(), Sound.CAT_MEOW, 1F, 1);
+					p2.playSound(p2.getLocation(), Sound.CREEPER_DEATH, 1F, 1);
 	
 					final Location t = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(p2.getName())));
 					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
