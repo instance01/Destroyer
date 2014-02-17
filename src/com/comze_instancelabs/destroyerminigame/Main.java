@@ -1014,7 +1014,7 @@ public class Main extends JavaPlugin implements Listener {
 		
 	    
 		Sign s = this.getSignFromArena(arena);
-		s.setLine(2, "§4Restarting");
+		s.setLine(2, "§n§4::Restarting::");
 		s.setLine(3, "0/" + Integer.toString(this.maxplayers_perteam * 2));
 		s.update();
 		
@@ -1345,7 +1345,7 @@ public class Main extends JavaPlugin implements Listener {
 	    				if(arenap.containsKey(p1.getName())){
 		    				event.getEntity().setHealth(20);
 							String arena = arenap.get(p1.getName());
-							p2.playSound(p2.getLocation(), Sound.CREEPER_DEATH, 1F, 1);
+							p2.playSound(p2.getLocation(), Sound.SPIDER_DEATH, 1F, 1);
 			
 							final Location t = this.getComponentFromArena(arena, "lobby", "2");
 							Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
@@ -1386,7 +1386,7 @@ public class Main extends JavaPlugin implements Listener {
 	    		}else{
 	    			event.getEntity().setHealth(20);
 					String arena = arenap.get(p2.getName());
-					p2.playSound(p2.getLocation(), Sound.CREEPER_DEATH, 1F, 1);
+					p2.playSound(p2.getLocation(), Sound.SPIDER_DEATH, 1F, 1);
 	
 					final Location t = this.getComponentFromArena(arena, "spawn", Integer.toString(pteam.get(p2.getName())));
 					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
